@@ -1,0 +1,40 @@
+allprojects {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven { url = 'https://central.sonatype.com/repository/maven-snapshots/' }
+    }
+
+    apply plugin: 'java-library'
+
+    compileJava.options.encoding = 'UTF-8'
+    compileTestJava.options.encoding = 'UTF-8'
+    java.sourceCompatibility = JavaVersion.VERSION_1_8
+
+    version = '0.1'
+    group = 'org.dreamcat.daily.script'
+
+    dependencies {
+        compileOnly libs.lombok
+        annotationProcessor libs.lombok
+        testCompileOnly libs.lombok
+        testAnnotationProcessor libs.lombok
+        testImplementation libs.jupiter.api
+        testRuntimeOnly libs.jupiter.engine
+        testRuntimeOnly libs.junit.platform.launcher
+        implementation libs.slf4j.api
+        implementation libs.common
+    }
+
+    tasks.register('printVersion') {
+        doLast {
+            print version
+        }
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+
+    apply from: new File(rootDir, 'gradle/tasks-jar.gradle')
+}
