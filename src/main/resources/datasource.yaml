@@ -1,0 +1,27 @@
+datasource-alias:
+  postgres: [pg, postgresql]
+  starrocks: [sr]
+
+cast-literal:
+  "cast($value as $type)":
+    - db2: [binary, varbinary, blob]
+    - postgres: [bit] # or: cast($value as $type(16))
+
+  "convert($type, $value)":
+    - sqlserver: [binary, varbinary]
+
+  "$type($value)":
+    - mysql: [year]
+
+  # https://forums.oracle.com/ords/apexds/post/inserting-value-into-long-raw-column-8501
+  "utl_raw.cast_to_raw($value)":
+    - oracle: [raw, long raw]
+
+database-schema-sql:
+  "show databases": [mysql,starrocks,tidb]
+
+table-schema-sql:
+  "show tables from $database": [mysql,starrocks,tidb]
+
+column-schema-sql:
+  "show columns from $database.$table": [mysql,starrocks,tidb]

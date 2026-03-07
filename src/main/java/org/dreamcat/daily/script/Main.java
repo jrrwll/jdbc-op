@@ -11,7 +11,7 @@ import org.dreamcat.daily.script.base.BaseHandler;
         allProperties = true,
         firstChar = true,
         subcommands = {
-                MigrateHandler.class,
+                SyncHandler.class,
                 // export
                 ExportCsvHandler.class,
                 ExportExcelHandler.class,

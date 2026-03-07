@@ -13,7 +13,7 @@ log4j2 = '2.23.1'
 jupiter = '5.14.1'
 # https://central.sonatype.com/artifact/org.junit.platform/junit-platform-launcher
 junitPlatform = '1.14.1'
-# https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
+# https://central.sonatype.com/artifact/com.fasterxml.jackson.core/jackson-databind
 jackson = "2.17.2"
 
 [libraries]

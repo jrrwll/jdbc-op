@@ -18,6 +18,11 @@ import java.util.Arrays;
  */
 public abstract class BaseHandler implements ArgParserEntrypoint {
 
+    @ArgParserField("V")
+    public boolean verbose;
+    @ArgParserField("A")
+    public boolean abort;
+
     @ArgParserField(firstChar = true)
     private boolean help;
 
