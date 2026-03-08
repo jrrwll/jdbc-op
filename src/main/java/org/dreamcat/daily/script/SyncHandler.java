@@ -1,16 +1,25 @@
 package org.dreamcat.daily.script;
 
 import lombok.extern.slf4j.Slf4j;
+import org.dreamcat.common.MutableInt;
+import org.dreamcat.common.Pair;
 import org.dreamcat.common.Quadruple;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
+import org.dreamcat.common.sql.JdbcColumnDef;
+import org.dreamcat.common.util.ExceptionUtil;
+import org.dreamcat.common.util.MapUtil;
 import org.dreamcat.daily.script.ability.DataSourceAbility;
 import org.dreamcat.daily.script.ability.DbTableMappingsAbility;
 import org.dreamcat.daily.script.ability.JdbcAbility;
 import org.dreamcat.daily.script.base.BaseHandler;
 
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * @author Jerry Will
@@ -32,31 +41,81 @@ public class SyncHandler extends BaseHandler {
     @ArgParserField(nested = true)
     DbTableMappingsAbility dbTableMappingsAbility;
 
+    @ArgParserField({"n"})
+    private int batchSize = 1000;
+
     @Override
     public void run() throws Exception {
         dbTableMappingsAbility.init(dataSourceFrom, this);
 
-        jdbcFrom.run(this::handle);
+        handle();
     }
 
-    private void handle(Connection connection) throws Exception {
-        List<Quadruple<String, String, String, String>> dbTableMappings =
-                dbTableMappingsAbility.mappingDbTables(connection);
+    private void handle() throws Exception {
+        List<Quadruple<String, String, String, String>> dbTableMappings = new ArrayList<>();
+        jdbcFrom.run(connection -> {
+            dbTableMappings.addAll(dbTableMappingsAbility.mappingDbTables(connection));
+        });
+        if (dbTableMappings.isEmpty()) return;
+
         for (Quadruple<String, String, String, String> quadruple : dbTableMappings) {
             String database = quadruple.first();
             String table = quadruple.second();
             String targetDatabase = quadruple.third();
             String targetTable = quadruple.third();
-            log.info("starting to sync {}.{} to {}.{}", database, table, targetDatabase, targetTable);
-            long cost = System.currentTimeMillis();
-            int rowCount = doSync(connection, database, table, targetDatabase, targetTable);
-            cost = System.currentTimeMillis() - cost;
-            log.info("finished to sync {}.{} to {}.{}, rows {}, cost {}ms", database, table, targetDatabase, targetTable, rowCount, cost);
+
+            AtomicBoolean quit = new AtomicBoolean();
+            jdbcFrom.run(connection -> {
+                jdbcTo.run(targetConnection -> {
+                    boolean ok = handleOne(connection, targetConnection, database, table, targetDatabase, targetTable);
+                    if (!ok) {
+                        quit.set(true);
+                    }
+                });
+            });
+            if (quit.get()) {
+                break;
+            }
         }
     }
 
-    private int doSync(Connection connection, String database, String table,
-            String targetDatabase, String targetTable) {
+    private boolean handleOne(Connection connection, Connection targetConnection,
+            String database, String table, String targetDatabase, String targetTable) throws Exception {
+        log.info("starting to sync {}.{} to {}.{}", database, table, targetDatabase, targetTable);
+        long cost = System.currentTimeMillis();
+        int rowCount;
+        try {
+            rowCount = doHandleOne(connection, targetConnection, database, table, targetDatabase, targetTable);
+        } catch (Exception e) {
+            log.error("failed to sync {}.{} to {}.{}: {}",
+                    database, table, targetDatabase, targetTable,
+                    ExceptionUtil.getRootCauseMessage(e));
+            return !abort;
+        }
+        cost = System.currentTimeMillis() - cost;
+        log.info("success to sync {}.{} to {}.{}, rows {}, cost {}ms", database, table, targetDatabase, targetTable, rowCount, cost);
+        return true;
+    }
+
+    private int doHandleOne(Connection connection, Connection targetConnection,
+            String database, String table, String targetDatabase, String targetTable) throws Exception {
+        List<JdbcColumnDef> columns = dataSourceFrom.getColumns(connection, database, table);
+        if (verbose) {
+            log.info("{}.{} columns: {}", database, table, columns.stream()
+                    .map(c -> Pair.of(c.getName(), c.getType()))
+                    .collect(Collectors.toList()));
+        }
+        Map<String, JdbcColumnDef> columnMap = MapUtil.toMap(columns, JdbcColumnDef::getName);
+
+        dataSourceFrom.getRows(connection, database, table, batchSize, rows -> {
+            doHandleRows(targetDatabase, targetTable, rows, columnMap, targetConnection);
+        });
         return 0 ;
+    }
+
+    private void doHandleRows(String targetDatabase, String targetTable,
+            List<Map<String, Object>> rows, Map<String, JdbcColumnDef> columnMap,
+            Connection targetConnection) {
+
     }
 }

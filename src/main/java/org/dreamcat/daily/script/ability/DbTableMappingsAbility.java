@@ -58,7 +58,7 @@ public class DbTableMappingsAbility {
                     continue;
                 }
 
-                result.add(Quadruple.of(database, table, targetDatabase, targetTable));=
+                result.add(Quadruple.of(database, table, targetDatabase, targetTable));
             }
         }
         return result;

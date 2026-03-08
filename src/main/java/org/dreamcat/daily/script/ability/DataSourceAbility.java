@@ -17,13 +17,16 @@ import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.daily.script.model.DataSourceInfos;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -50,6 +53,9 @@ public class DataSourceAbility {
     transient SqlValueGenerator valueGenerator;
 
     transient RowNullRatioBasedGen rowNullRatioBasedGen;
+
+    private static final String select_without_database_sql = "select * from $table";
+    private static final String select_sql = "select * from $database.$table";;
 
     // ==== ==== ==== ====    ==== ==== ==== ====    ==== ==== ==== ====
 
@@ -104,6 +110,26 @@ public class DataSourceAbility {
                             .type(type.toString()).build();
                 })
                 .collect(Collectors.toList());
+    }
+
+    public void getRows(Connection connection, String database, String table, int batchSize,
+            Consumer<List<Map<String, Object>>> handler) throws SQLException {
+        String sql = InterpolationUtil.format(
+                database == null ? select_without_database_sql : select_sql,
+                "database", database, "db", database,
+                "table", table, "tb", table);
+        log.info("getRows: {}", sql);
+        try (Statement statement = connection.createStatement()) {
+            try (ResultSet rs = statement.executeQuery(sql)) {
+                JdbcUtil.getRows(rs, batchSize, rows -> {
+                    log.info("handling {} rows on {}.{}",
+                            rows.size(), database, table);
+                    if (!rows.isEmpty()) {
+                        handler.accept(rows);
+                    }
+                });
+            }
+        }
     }
 
     // ---- ---- ---- ----    ---- ---- ---- ----    ---- ---- ---- ----

@@ -1,9 +1,10 @@
 package org.dreamcat.daily.script.base;
 
 import lombok.extern.slf4j.Slf4j;
+import org.dreamcat.common.Pair;
 import org.dreamcat.common.argparse.ArgParserField;
-import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.daily.script.ability.DataSourceAbility;
+import org.dreamcat.daily.script.ability.DbTablesAbility;
 import org.dreamcat.daily.script.ability.JdbcAbility;
 
 import java.sql.Connection;
@@ -21,8 +22,8 @@ public abstract class BaseExportHandler extends BaseHandler {
     @ArgParserField(nested = true)
     JdbcAbility jdbc;
 
-    String dbTablesFile;
-    String dbTablesContent; // json
+    @ArgParserField(nested = true)
+    DbTablesAbility dbTablesAbility;;
 
     @Override
     public void run() throws Exception {
@@ -30,33 +31,15 @@ public abstract class BaseExportHandler extends BaseHandler {
     }
 
     private void handle(Connection connection) throws Exception {
-        List<String> databases = dataSource.getDatabases(connection);
-        if (ObjectUtil.isEmpty(databases)) {
-            log.error("no databases found");
-            return;
+        List<Pair<String, String>> dbTables = dbTablesAbility.getDbTables(connection);
+        for (Pair<String, String> dbTable : dbTables) {
+            String database = dbTable.getFirst();
+            String table = dbTable.getSecond();
+            doExport(connection, database, table);
         }
+    }
 
-        for (String database : databases) {
-            String targetDatabase = dbTableMappingAbility.getDatabaseMappings(database);
-            if (targetDatabase == null) {
-                continue;
-            }
+    private void doExport(Connection connection, String database, String table) {
 
-            List<String> tables = dataSource.getTables(connection, database);
-            if (ObjectUtil.isEmpty(tables)) {
-                log.error("no tables found on database " + database);
-                return;
-            }
-
-            for (String table : tables) {
-                String targetTable = dbTableMappingAbility.getTableMappings(database, table);
-                if (targetTable == null) {
-                    continue;
-                }
-
-                log.info("starting to sync {}.{} to {}.{}", database, table, targetDatabase, targetTable);
-                sync(connection, database, table, targetDatabase, targetTable);
-            }
-        }
     }
 }
