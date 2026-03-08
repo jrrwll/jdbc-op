@@ -14,6 +14,7 @@ import org.dreamcat.common.util.ClassLoaderUtil;
 import org.dreamcat.common.util.FunctionUtil;
 import org.dreamcat.common.util.MapUtil;
 import org.dreamcat.common.util.ObjectUtil;
+import org.dreamcat.common.util.StringUtil;
 import org.dreamcat.daily.script.model.DataSourceInfos;
 
 import java.sql.Connection;
@@ -48,6 +49,7 @@ public class DataSourceAbility {
     transient String databaseSchemaSql;
     transient String tableSchemaSql;
     transient String columnSchemaSql;
+    transient boolean doubleQuota; // "c1" or `c2`
 
     transient SqlLiteralConvertor literalConvertor;
     transient SqlValueGenerator valueGenerator;
@@ -130,6 +132,37 @@ public class DataSourceAbility {
                 });
             }
         }
+    }
+
+    public String getInsertIntoSql(
+            List<Map<String, Object>> rows,
+            Map<String, JdbcColumnDef> columnMap,
+            String targetDatabase, String targetTable,
+            boolean columnQuota) {
+        List<List<Object>> list = rows.stream()
+                .map(map -> new ArrayList<>(map.values()))
+                .collect(Collectors.toList());
+
+        List<String> columnNames = new ArrayList<>(rows.get(0).keySet());
+        List<String> typeNames = new ArrayList<>();
+        for (String columnName : columnNames) {
+            typeNames.add(columnMap.get(columnName).getType().toLowerCase());
+        }
+
+        String columnNameSql = StringUtil.join(",", columnNames, columnName -> {
+            if (!columnQuota) return columnName;
+            return StringUtil.escape(columnName, doubleQuota ? "\"" : "`");
+        });
+        String insertIntoSql;
+        if (targetDatabase != null) {
+            insertIntoSql = String.format(
+                    "insert into %s.%s(%s) values ", targetDatabase, targetTable, columnNameSql);
+        } else {
+            insertIntoSql = String.format(
+                    "insert into %s(%s) values ", targetTable, columnNameSql);
+        }
+
+        return insertIntoSql + generateValues(list, typeNames);
     }
 
     // ---- ---- ---- ----    ---- ---- ---- ----    ---- ---- ---- ----

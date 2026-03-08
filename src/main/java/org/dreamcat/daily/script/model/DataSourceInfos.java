@@ -21,4 +21,5 @@ public class DataSourceInfos {
     private Map<String, List<String>> databaseSchemaSql;
     private Map<String, List<String>> tableSchemaSql;
     private Map<String, List<String>> columnSchemaSql;
+    private List<String> doubleQuota;
 }

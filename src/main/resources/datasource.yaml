@@ -25,3 +25,5 @@ table-schema-sql:
 
 column-schema-sql:
   "show columns from $database.$table": [mysql,starrocks,tidb]
+
+double-quota: [postgres]
