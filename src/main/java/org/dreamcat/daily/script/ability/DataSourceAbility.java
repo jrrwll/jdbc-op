@@ -49,6 +49,7 @@ public class DataSourceAbility {
     transient String databaseSchemaSql;
     transient String tableSchemaSql;
     transient String columnSchemaSql;
+    transient String  columnCommentSql;
     transient boolean doubleQuota; // "c1" or `c2`
 
     transient SqlLiteralConvertor literalConvertor;
@@ -88,6 +89,12 @@ public class DataSourceAbility {
         return JdbcUtil.getRows(connection, sql).stream()
                 .map(map -> new ArrayList<>(map.values()).get(0).toString())
                 .collect(Collectors.toList());
+    }
+
+    public Map<String, JdbcColumnDef> getColumnMap(Connection connection, String database, String table)
+            throws SQLException {
+        List<JdbcColumnDef> columns = getColumns(connection, database, table);
+        return MapUtil.toMap(columns, JdbcColumnDef::getName);
     }
 
     public List<JdbcColumnDef> getColumns(Connection connection, String database, String table)
@@ -134,6 +141,8 @@ public class DataSourceAbility {
         }
     }
 
+    // ---- ---- ---- ----    ---- ---- ---- ----    ---- ---- ---- ----
+
     public String getInsertIntoSql(
             List<Map<String, Object>> rows,
             Map<String, JdbcColumnDef> columnMap,
@@ -163,6 +172,16 @@ public class DataSourceAbility {
         }
 
         return insertIntoSql + generateValues(list, typeNames);
+    }
+
+    public String getColumnCommentSql(String comment) {
+        if (columnCommentSql == null) return null;
+        return InterpolationUtil.format(columnCommentSql, "comment", comment);
+    }
+
+    public String formatColumnName(String columnName, boolean columnQuota) {
+        if (!columnQuota) return columnName;
+        return StringUtil.escape(columnName, doubleQuota ? "\"" : "`");
     }
 
     // ---- ---- ---- ----    ---- ---- ---- ----    ---- ---- ---- ----

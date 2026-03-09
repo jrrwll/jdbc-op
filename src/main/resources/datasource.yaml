@@ -26,4 +26,7 @@ table-schema-sql:
 column-schema-sql:
   "show columns from $database.$table": [mysql,starrocks,tidb]
 
+column-comment-sql:
+  "comment on column $table.$column is '$comment'": [postgres]
+
 double-quota: [postgres]

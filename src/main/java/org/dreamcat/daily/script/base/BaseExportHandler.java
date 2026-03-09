@@ -18,12 +18,17 @@ import java.util.List;
 public abstract class BaseExportHandler extends BaseHandler {
 
     @ArgParserField(nested = true)
-    DataSourceAbility dataSource;
+    protected DataSourceAbility dataSource;
     @ArgParserField(nested = true)
-    JdbcAbility jdbc;
+    protected JdbcAbility jdbcAbility;
 
     @ArgParserField(nested = true)
-    DbTablesAbility dbTablesAbility;;
+    protected DbTablesAbility dbTablesAbility;;
+
+    @ArgParserField({"n"})
+    protected int batchSize = 1000;
+
+    protected abstract void exportTable(Connection connection, String database, String table) throws Exception;
 
     @Override
     public void run() throws Exception {
@@ -35,11 +40,8 @@ public abstract class BaseExportHandler extends BaseHandler {
         for (Pair<String, String> dbTable : dbTables) {
             String database = dbTable.getFirst();
             String table = dbTable.getSecond();
-            doExport(connection, database, table);
+
+            exportTable(connection, database, table);
         }
-    }
-
-    private void doExport(Connection connection, String database, String table) {
-
     }
 }

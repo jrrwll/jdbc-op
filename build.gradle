@@ -24,6 +24,7 @@ allprojects {
         testRuntimeOnly libs.junit.platform.launcher
         implementation libs.slf4j.api
         implementation libs.common
+        implementation libs.common.excel
     }
 
     tasks.register('printVersion') {
