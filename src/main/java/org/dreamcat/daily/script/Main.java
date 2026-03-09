@@ -15,6 +15,7 @@ import org.dreamcat.daily.script.base.BaseHandler;
                 // export
                 ExportCsvHandler.class,
                 ExportExcelHandler.class,
+                ExportSqlHandler.class,
                 // import
                 ImportCsvHandler.class,
                 ImportExcelHandler.class,

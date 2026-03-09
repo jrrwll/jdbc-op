@@ -32,7 +32,7 @@ public abstract class BaseExportHandler extends BaseHandler {
 
     @Override
     public void run() throws Exception {
-        jdbc.run(this::handle);
+        jdbcAbility.run(this::handle);
     }
 
     private void handle(Connection connection) throws Exception {
