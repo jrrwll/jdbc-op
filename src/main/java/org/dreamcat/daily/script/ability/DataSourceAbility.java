@@ -282,6 +282,15 @@ public class DataSourceAbility {
                 columnSchemaSql = entry.getKey();
             }
         }
+
+        // other
+        for (Entry<String, List<String>> entry : dataSourceInfos.getColumnSchemaSql().entrySet()) {
+            if (entry.getValue().contains(dataSourceType)) {
+                columnCommentSql = entry.getKey();
+            }
+        }
+
+        doubleQuota = dataSourceInfos.getDoubleQuota().contains(dataSourceType);
     }
 
     private String convert(String literal, String typeName) {
