@@ -7,9 +7,11 @@ import org.dreamcat.daily.script.ability.OutputAbility;
 import org.dreamcat.daily.script.base.BaseExportHandler;
 
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author Jerry Will
@@ -33,7 +35,15 @@ public class ExportSqlHandler extends BaseExportHandler {
     @SneakyThrows
     protected void exportRows(String database, String table, List<Map<String, Object>> rows,
             Map<String, JdbcColumnDef> columnMap) {
-        String sql = dataSource.getInsertIntoSql(rows, columnMap, database, table, columnQuota);
+        List<String> columnNames = new ArrayList<>(rows.get(0).keySet());
+        List<String> typeNames = columnNames.stream()
+                .map(columnName -> columnMap.get(columnName).getType().toLowerCase())
+                .collect(Collectors.toList());
+        List<List<Object>> rowList = rows.stream()
+                .map(map -> new ArrayList<>(map.values()))
+                .collect(Collectors.toList());
+        String sql = dataSource.getInsertIntoSql(rowList, columnNames, typeNames,
+                database, table, columnQuota);
 
         outputAbility.run(Collections.singletonList(sql));
     }

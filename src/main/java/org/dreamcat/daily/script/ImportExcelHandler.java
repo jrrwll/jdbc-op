@@ -8,11 +8,12 @@ import org.dreamcat.common.Pair;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.excel.ExcelUtil;
-import org.dreamcat.common.sql.JdbcColumnDef;
 import org.dreamcat.common.util.ExceptionUtil;
+import org.dreamcat.common.util.ListUtil;
 import org.dreamcat.daily.script.base.BaseImportHandler;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -27,10 +28,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @ArgParserType(command = "import-csv")
 public class ImportExcelHandler extends BaseImportHandler {
+
     @ArgParserField("f")
     private String file;
-    @ArgParserField("E")
-    private boolean create; // create table if not exists
 
     @ArgParserField("scn")
     private List<String> sheetColumnNames; // mapping to table name, --sn s1:c1,c2,c3
@@ -82,14 +82,22 @@ public class ImportExcelHandler extends BaseImportHandler {
         }
     }
 
-    private void importTable(String sheetName, List<String> header, List<List<Object>> rows) throws Exception {
-        if (create) {
+    private void importTable(String tableName, List<String> columnNames, List<List<Object>> rows) throws Exception {
+        List<String> columnTypes = dataSourceAbility.detectColumnTypes(rows.get(0));
 
-        } else {
-            jdbcAbility.run(connection -> {
-                Map<String, JdbcColumnDef> columnMap = dataSourceAbility.getColumnMap(connection, database, sheetName);
-            });
+        List<String> sqlList = new ArrayList<>();
+        List<List<List<Object>>> partition = ListUtil.partition(rows, batchSize);
+        for (List<List<Object>> rowList : partition) {
+            String insertIntoSql = dataSourceAbility.getInsertIntoSql(
+                    rowList, columnNames, columnTypes,
+                    database, tableName, columnQuota);
+            sqlList.add(insertIntoSql);
         }
-        // dataSourceAbility.getInsertIntoSql(rows, database, sheetName, );
+
+        if (!yes) {
+            outputAbility.run(sqlList);
+        } else {
+            jdbcAbility.executeSql(sqlList, verbose, abort);
+        }
     }
 }

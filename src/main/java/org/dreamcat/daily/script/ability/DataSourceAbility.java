@@ -10,6 +10,7 @@ import org.dreamcat.common.sql.JdbcUtil;
 import org.dreamcat.common.sql.SqlLiteralConvertor;
 import org.dreamcat.common.sql.SqlValueGenerator;
 import org.dreamcat.common.text.InterpolationUtil;
+import org.dreamcat.common.text.TextValueType;
 import org.dreamcat.common.util.ClassLoaderUtil;
 import org.dreamcat.common.util.FunctionUtil;
 import org.dreamcat.common.util.MapUtil;
@@ -23,9 +24,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -51,6 +54,8 @@ public class DataSourceAbility {
     transient String columnSchemaSql;
     transient String  columnCommentSql;
     transient boolean doubleQuota; // "c1" or `c2`
+
+    transient EnumMap<TextValueType, String> textValueTypeMapping;
 
     transient SqlLiteralConvertor literalConvertor;
     transient SqlValueGenerator valueGenerator;
@@ -144,34 +149,23 @@ public class DataSourceAbility {
     // ---- ---- ---- ----    ---- ---- ---- ----    ---- ---- ---- ----
 
     public String getInsertIntoSql(
-            List<Map<String, Object>> rows,
-            Map<String, JdbcColumnDef> columnMap,
-            String targetDatabase, String targetTable,
-            boolean columnQuota) {
-        List<List<Object>> list = rows.stream()
-                .map(map -> new ArrayList<>(map.values()))
-                .collect(Collectors.toList());
-
-        List<String> columnNames = new ArrayList<>(rows.get(0).keySet());
-        List<String> typeNames = new ArrayList<>();
-        for (String columnName : columnNames) {
-            typeNames.add(columnMap.get(columnName).getType().toLowerCase());
-        }
-
+            List<List<Object>> rows,
+            List<String> columnNames, List<String> columnTypes,
+            String database, String table, boolean columnQuota) {
         String columnNameSql = StringUtil.join(",", columnNames, columnName -> {
             if (!columnQuota) return columnName;
             return StringUtil.escape(columnName, doubleQuota ? "\"" : "`");
         });
         String insertIntoSql;
-        if (targetDatabase != null) {
+        if (database != null) {
             insertIntoSql = String.format(
-                    "insert into %s.%s(%s) values ", targetDatabase, targetTable, columnNameSql);
+                    "insert into %s.%s(%s) values ", database, table, columnNameSql);
         } else {
             insertIntoSql = String.format(
-                    "insert into %s(%s) values ", targetTable, columnNameSql);
+                    "insert into %s(%s) values ", table, columnNameSql);
         }
 
-        return insertIntoSql + generateValues(list, typeNames);
+        return insertIntoSql + generateValues(rows, columnTypes);
     }
 
     public String getColumnCommentSql(String comment) {
@@ -182,6 +176,15 @@ public class DataSourceAbility {
     public String formatColumnName(String columnName, boolean columnQuota) {
         if (!columnQuota) return columnName;
         return StringUtil.escape(columnName, doubleQuota ? "\"" : "`");
+    }
+
+    public List<String> detectColumnTypes(List<Object> values) {
+        return values.stream().map(this::detectColumnType).collect(Collectors.toList());
+    }
+
+    public String detectColumnType(Object value) {
+        TextValueType textValueType = TextValueType.detectObject(value);
+        return textValueTypeMapping.get(textValueType);
     }
 
     // ---- ---- ---- ----    ---- ---- ---- ----    ---- ---- ---- ----

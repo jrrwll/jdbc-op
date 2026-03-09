@@ -5,12 +5,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.function.IConsumer;
 import org.dreamcat.common.sql.DriverUtil;
+import org.dreamcat.common.util.ExceptionUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.daily.script.base.BaseHandler;
 
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.Statement;
 import java.util.List;
 import java.util.Properties;
 
@@ -65,6 +67,30 @@ public class JdbcAbility {
         DriverUtil.runIsolated(jdbcUrl, props, urls, driverClass, c -> {
             f.accept(c);
             return null;
+        });
+    }
+
+    public void executeSql(List<String> sqlList, boolean verbose, boolean abort) throws Exception {
+        run(connection -> {
+            log.info("start to execute sql, total {}", sqlList.size());
+            long cost = System.currentTimeMillis();
+            for (String sql : sqlList) {
+                if (verbose) {
+                    log.info("{}", sql);
+                }
+                try (Statement statement = connection.createStatement()) {
+                    statement.executeUpdate(sql);
+                } catch (Exception e) {
+                    if (verbose) {
+                        log.error("fail to execute sql: {}", ExceptionUtil.getRootCauseMessage(e), e);
+                    } else {
+                        log.error("fail to execute sql: {}", ExceptionUtil.getRootCauseMessage(e));
+                    }
+                    if (abort) return;
+                }
+            }
+            cost = System.currentTimeMillis() - cost;
+            log.info("success to execute sql, cost {}ms", cost);
         });
     }
 }

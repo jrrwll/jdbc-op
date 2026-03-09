@@ -13,6 +13,13 @@ public abstract class BaseImportHandler extends BaseHandler {
     protected JdbcAbility jdbcAbility;
     @ArgParserField(nested = true)
     protected DataSourceAbility dataSourceAbility;
+    @ArgParserField(nested = true)
+    protected OutputAbility outputAbility;
 
     protected String database;
+    @ArgParserField({"n"})
+    protected int batchSize = 1000;
+
+    protected boolean columnQuota;
+    protected boolean yes;
 }
