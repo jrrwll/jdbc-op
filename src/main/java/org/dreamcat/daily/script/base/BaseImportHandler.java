@@ -22,4 +22,8 @@ public abstract class BaseImportHandler extends BaseHandler {
 
     protected boolean columnQuota;
     protected boolean yes;
+
+    public void init() throws Exception {
+        dataSourceAbility.init();
+    }
 }

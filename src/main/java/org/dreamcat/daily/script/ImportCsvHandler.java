@@ -31,6 +31,8 @@ public class ImportCsvHandler extends BaseImportHandler {
 
     @Override
     public void run() throws Exception {
+        init();
+
         List<List<String>> rows;
         if (tsv) {
             rows = CsvUtil.readTsv(new File(file));

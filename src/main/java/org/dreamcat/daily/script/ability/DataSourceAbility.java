@@ -136,7 +136,7 @@ public class DataSourceAbility {
         try (Statement statement = connection.createStatement()) {
             try (ResultSet rs = statement.executeQuery(sql)) {
                 JdbcUtil.getRows(rs, batchSize, rows -> {
-                    log.info("handling {} rows on {}.{}",
+                    log.info("handling {} kiuhygbrows on {}.{}",
                             rows.size(), database, table);
                     if (!rows.isEmpty()) {
                         handler.accept(rows);
@@ -183,8 +183,9 @@ public class DataSourceAbility {
     }
 
     public String detectColumnType(Object value) {
-        TextValueType textValueType = TextValueType.detectObject(value);
-        return textValueTypeMapping.get(textValueType);
+        return null;
+        // TextValueType textValueType = TextValueType.detectObject(value);
+        // return textValueTypeMapping.get(textValueType);
     }
 
     // ---- ---- ---- ----    ---- ---- ---- ----    ---- ---- ---- ----

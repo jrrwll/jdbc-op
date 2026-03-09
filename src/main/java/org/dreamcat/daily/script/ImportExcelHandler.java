@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
  * @version 2023-06-28
  */
 @Slf4j
-@ArgParserType(command = "import-csv")
+@ArgParserType(command = "import-excel")
 public class ImportExcelHandler extends BaseImportHandler {
 
     @ArgParserField("f")
@@ -37,7 +37,8 @@ public class ImportExcelHandler extends BaseImportHandler {
 
     transient List<Pair<String, List<String>>> sheetColumnNameList;
 
-    public void init() {
+    public void init() throws Exception {
+        super.init();
         sheetColumnNameList = sheetColumnNames.stream()
                 .map(s -> Pair.fromSep(s, ":", s1 -> s1, s2 -> Arrays.asList(s2.split(","))))
                 .collect(Collectors.toList());

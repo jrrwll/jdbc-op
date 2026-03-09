@@ -7,7 +7,7 @@ dreamcat-x = "0.5-SNAPSHOT"
 lombok = '1.18.42'
 # https://mvnrepository.com/artifact/org.slf4j/slf4j-api
 slf4j = '1.7.36'
-# https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core
+# https://central.sonatype.com/artifact/org.apache.logging.log4j/log4j-slf4j2-impl
 log4j2 = '2.23.1'
 # https://central.sonatype.com/artifact/org.junit.jupiter/junit-jupiter-api
 jupiter = '5.14.1'
@@ -24,7 +24,7 @@ lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 log4j2-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j2" }
-log4j2-slf4j-impl = { module = "org.apache.logging.log4j:slf4j-impl", version.ref = "log4j2" }
+log4j2-slf4j-impl = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version.ref = "log4j2" }
 jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "jupiter" }
 jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "jupiter" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junitPlatform" }

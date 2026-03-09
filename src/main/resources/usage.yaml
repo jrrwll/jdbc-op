@@ -1,0 +1,94 @@
+subcommandsTitle: 子命令：
+paramsTitle: 参数：
+optionsTitle: 选项：
+identWidth: 2
+inheritAlways: true
+
+header: jdbc-op jdbc命令行工具
+
+helpDesc:
+  help: 打印此帮助
+
+inheritGroupHeader:
+  jdbc: JDBC参数：
+  output: 输出参数：
+  randomGen: 随机数据生成规则：
+  textType: 文本类型探查：
+
+inheritHelpParam:
+  columnNameTemplate: <template>
+  partitionColumnNameTemplate: <template>
+  rowNullRatio: <ratio,rows>
+  rollingFileMaxSqlCount: <maxSqlCount>
+  textTypeFile: <file>
+  textTypeFileContent: <fileContent>
+inheritHelpDesc:
+  help: 打印此帮助
+  debug: 打印debug信息
+  jdbcUrl: JDBC连接参数：JDBC URL 地址
+  user: JDBC连接参数：用户名
+  password: JDBC连接参数：密码
+  props: 额外的jdbc参数
+  driverPath: JDBC驱动jar包所在目录
+  driverClass: JDBC驱动全限定类名
+  yes: 是否实际打开JDBC连接并执行SQL
+  columnNameTemplate: 普通列名模板，例子：c_${type}_${index}
+  partitionColumnNameTemplate: 分区列名模板，例子：p_${type}_${index}
+  commentAlone: 是否生成额外的comment sql
+  columnCommentSql: "comment sql模板\n${ls}例如：comment on column $table.$column is 'Column Type: $type';\n${ls}或者：Column Type: $type"
+  compact: 紧凑模式，SQL不换行
+  extraColumnSql: 额外的需要创建的列SQL
+  tableSuffixSql: 自定义的建表SQL后缀
+  batchSize: 批量插入的大小限制，即生成的values的最大行数
+  rowNum: 插入的总行数
+  columnQuota: 是否为列名转义
+  doubleQuota: 列名转义符是否为双引号
+  dataSourceType: 数据源类型，比如 postgresql, mysql, oracle, db2, sqlserver
+  converters: 字面量转换函数，例子：binary:cast($value as $type)
+  converterFile: "指定字面量转换函数的文件，以换行符\\n分隔"
+  castAs: "在insert into中使用cast(x as y)类型转换函数"
+  setEnumValues: set和enum类型的枚举值，默认为a,b,c,d
+  rollingFile: 生成的滚动SQL文件，例子：output_${i+100}.sql
+  rollingFileMaxSqlCount: 指定每个滚动小文件的最大SQL条数
+  nullRatio: 每列生成的值，有多少可能性为null，合法取值范围为[0, 1]
+  rowNullRatio: 每rows行中的一行的每列的值，有ratio的可能性为null,例子：0.5,10
+  outputFile: 文件名，保存SQL至文件
+  outputFileSqlMaxCount: "分文件保存，每个文件的最大SQL数\n${ls}outputFile取a.sql，则生成a1.sql, a2.sql ..."
+  textTypeFile: 类型映射文件的路径
+  textTypeFileContent: 类型映射文件的文件内容，与-t互斥，，优先取-t的值
+  nullType: null值的默认类型
+
+subcommands:
+  import-csv:
+    commandDesc: 将csv数据导入到数据表中
+    header: "jdbc-op import-csv 将csv数据导入到数据表中"
+    helpDesc:
+      tableName: 数据表名，例如：my_table, my_db.my_table
+      tsv: 使用tsv格式解析而非csv
+      file: 数据文件的路径
+      fileContent: 导入文件的内容，与-f互斥，，优先取-f的值
+      emptyStringAsNull: 视空字符串为null
+      existing: 是否从现存的数据表中探查类型
+
+  import-excel:
+    commandDesc: 将excel数据导入到多张数据表中
+    header: "jdbc-op import-excel 将excel数据导入到多张数据表中"
+    helpDesc:
+      file: 数据文件的路径
+      sheetNames: sheet名的映射规则
+      columnNames: "列名的映射规则，支持多值，每个值对应一个sheet\n${ls}例子：--scn '*' 'c_int,c_string,c_date'"
+      existing: 是否从现存的数据表中探查类型
+
+  sync:
+    commandDesc: 将数据从一个 JDBC 数据源同步至另一个目标数据源
+    header: "jdbc-op export-jdbc 将数据从一个 JDBC 数据源同步至另一个目标数据源"
+    helpDesc:
+      columnQuota: 是否为列名转义
+      doubleQuota: 列名转义符是否为双引号
+      yes: 是否实际执行同步
+      jdbcUrl1: 源数据源
+      jdbcUrl2: 目标数据源
+      databases: 需要同步的数据库
+      tables: 需要同步的数据表
+      tablePattern: 需要同步的数据表pattern
+      batchSize: 批量插入的大小限制，即生成的values的最大行数
