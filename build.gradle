@@ -47,3 +47,9 @@ dependencies {
     implementation libs.bundles.jackson
     implementation libs.bundles.log4j2
 }
+
+jar {
+    manifest {
+        attributes "Main-Class": "org.dreamcat.daily.script.Main"
+    }
+}

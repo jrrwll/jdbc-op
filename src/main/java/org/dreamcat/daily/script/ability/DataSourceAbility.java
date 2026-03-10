@@ -149,6 +149,21 @@ public class DataSourceAbility {
     // ---- ---- ---- ----    ---- ---- ---- ----    ---- ---- ---- ----
 
     public String getInsertIntoSql(
+            List<Map<String, Object>> rows,
+            Map<String, JdbcColumnDef> columnMap,
+            String database, String table, boolean columnQuota) {
+        List<String> columnNames = new ArrayList<>(rows.get(0).keySet());
+        List<String> typeNames = columnNames.stream()
+                .map(columnName -> columnMap.get(columnName).getType().toLowerCase())
+                .collect(Collectors.toList());
+        List<List<Object>> rowList = rows.stream()
+                .map(map -> new ArrayList<>(map.values()))
+                .collect(Collectors.toList());
+        return getInsertIntoSql(rowList, columnNames, typeNames,
+                database, table, columnQuota);
+    }
+
+    public String getInsertIntoSql(
             List<List<Object>> rows,
             List<String> columnNames, List<String> columnTypes,
             String database, String table, boolean columnQuota) {

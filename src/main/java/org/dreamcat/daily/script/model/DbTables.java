@@ -18,6 +18,4 @@ public class DbTables {
     private String db;
 
     private List<String> tables;
-
-    private String tableRegex;
 }

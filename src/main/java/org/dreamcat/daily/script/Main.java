@@ -16,10 +16,11 @@ import org.dreamcat.daily.script.base.BaseHandler;
                 ExportCsvHandler.class,
                 ExportExcelHandler.class,
                 ExportSqlHandler.class,
+                ExportJsonHandler.class,
                 // import
                 ImportCsvHandler.class,
                 ImportExcelHandler.class,
-                //
+                ImportJsonHandler.class,
         })
 public class Main extends BaseHandler {
 

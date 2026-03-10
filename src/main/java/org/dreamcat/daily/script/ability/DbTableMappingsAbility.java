@@ -4,9 +4,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.common.Quadruple;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
+import org.dreamcat.common.json.JsonUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.daily.script.base.BaseHandler;
+import org.dreamcat.daily.script.common.AbortException;
+import org.dreamcat.daily.script.model.DbTableMappings;
 
+import java.io.File;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,12 +28,24 @@ public class DbTableMappingsAbility {
     @ArgParserField("dtm")
     public String dbTableMappings; // json content
 
+    transient List<DbTableMappings> dbTableMappingsList;
+
     transient DataSourceAbility dataSource;
     transient BaseHandler handler;
 
     public void init(DataSourceAbility dataSource, BaseHandler handler) {
         this.dataSource = dataSource;
         this.handler = handler;
+
+        if (dbTableMappingsFile != null) {
+            this.dbTableMappingsList = JsonUtil.fromJsonArray(
+                    new File(dbTableMappingsFile), DbTableMappings.class);
+        } else if (ObjectUtil.isNotEmpty(dbTableMappings)) {
+            this.dbTableMappingsList = JsonUtil.fromJsonArray(
+                    dbTableMappings, DbTableMappings.class);
+        } else {
+            throw new AbortException("no dbTableMappingsFile or dbTableMappings specified");
+        }
     }
 
     public List<Quadruple<String, String, String, String>> mappingDbTables(Connection connection) throws Exception {
@@ -69,6 +85,16 @@ public class DbTableMappingsAbility {
     }
 
     private String getTableMappings(String database, String table) {
-        return null;
+        for (DbTableMappings tableMappings : dbTableMappingsList) {
+            if (!tableMappings.getDb().equals(database)) continue;
+            if (ObjectUtil.isEmpty(tableMappings.getTableMappings())) continue;
+
+            String mappingTable = tableMappings.getTableMappings().get(table);
+            if (mappingTable != null) {
+                return mappingTable;
+            }
+        }
+        return table;
     }
+
 }

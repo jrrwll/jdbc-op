@@ -12,12 +12,14 @@ import java.util.Map;
  */
 @Getter
 @Setter
-public class DbTableMappings extends DbTables {
+public class DbTableMappings {
+
+    @JsonAlias("database")
+    private String db;
 
     @JsonAlias("targetDatabase")
     private String targetDb;
 
     private Map<String, String> tableMappings;
-
-    private String tableReplacement;
 }
+

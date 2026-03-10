@@ -1,6 +1,7 @@
 package org.dreamcat.daily.script.base;
 
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.common.argparse.ArgParserContext;
 import org.dreamcat.common.argparse.ArgParserEntrypoint;
 import org.dreamcat.common.argparse.ArgParserField;
@@ -16,6 +17,7 @@ import java.util.Arrays;
  * @author Jerry Will
  * @version 2023-06-27
  */
+@Slf4j
 public abstract class BaseHandler implements ArgParserEntrypoint {
 
     @ArgParserField("V")
@@ -54,7 +56,7 @@ public abstract class BaseHandler implements ArgParserEntrypoint {
         try {
             this.run();
         } catch (Exception e) {
-            System.err.println(e.getMessage());
+            log.error("run failed on unexpected exception", e);
             System.exit(1);
         }
     }
