@@ -1,14 +1,15 @@
 package org.dreamcat.daily.script;
 
-import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
-import org.dreamcat.common.excel.style.ExcelStyle;
-import org.dreamcat.common.text.InterpolationUtil;
-import org.dreamcat.daily.script.base.BaseExportHandler;
 import org.dreamcat.common.excel.build.ExcelBuilder;
+import org.dreamcat.common.excel.style.ExcelStyle;
+import org.dreamcat.daily.script.base.BaseExportHandler;
+
 import java.io.File;
 import java.sql.Connection;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Jerry Will
@@ -17,14 +18,9 @@ import java.util.*;
 @ArgParserType(command = "export-excel")
 public class ExportExcelHandler extends BaseExportHandler {
 
-    @ArgParserField("o")
-    private String outputFile = "$database/$table.xlsx";
-
     @Override
     protected void exportTable(Connection connection, String database, String table) throws Exception {
-        String outputName = InterpolationUtil.format(outputFile,
-                "database", database, "db", database,
-                "table", table, "tb", table);
+        String outputName = formatOutputName(database, table, "xlsx");
         File outputFile = new File(outputName);
 
         List<String> headers = new ArrayList<>();

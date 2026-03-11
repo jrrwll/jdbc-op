@@ -1,18 +1,20 @@
 package org.dreamcat.daily.script;
 
 import lombok.extern.slf4j.Slf4j;
+import org.dreamcat.common.Triple;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.io.FileUtil;
 import org.dreamcat.common.json.JsonUtil;
-import org.dreamcat.common.util.ListUtil;
 import org.dreamcat.daily.script.base.BaseImportHandler;
 import org.dreamcat.daily.script.common.AbortException;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -22,92 +24,56 @@ import java.util.stream.Collectors;
 @Slf4j
 @SuppressWarnings({"unchecked", "rawtypes"})
 @ArgParserType(command = "import-json")
-public class ImportJsonHandler extends BaseImportHandler {
-
-    @ArgParserField("f")
-    String file;
+public class ImportJsonHandler extends BaseImportHandler.SingleTable {
 
     @ArgParserField("jsonl")
     boolean jsonLine;
     @ArgParserField("json")
     boolean jsonNormal;
 
-    @ArgParserField(position = 1)
-    private String tableName;
-
     @Override
-    public void run() throws Exception {
-        init();
-
+    protected Triple<List<List<Object>>, List<String>, List<String>> readAllRows() throws Exception {
         if (file == null) {
             throw new AbortException("require file: -f|--file <file>");
         }
+
+        List<Map<String, Object>> rows;
         if (jsonLine) {
-            handleJsonLine();
+            rows = readJsonLine();
         } else if (jsonNormal) {
-            handleJson();
+            rows = readJson();
         } else {
             String suffix = FileUtil.suffix(file).toLowerCase();
             if (suffix.equals("jsonl")) {
-                handleJsonLine();
+                rows = readJsonLine();
             } else if (suffix.equals("json")) {
-                handleJson();
+                rows = readJson();
             } else {
                 throw new AbortException("must specify file format by pass: --jsonl or --json");
             }
         }
+
+        List<List<Object>> rowList = rows.stream()
+                .map(row -> (List<Object>) new ArrayList(row.values()))
+                .collect(Collectors.toList());
+
+        List<String> columnNames = new ArrayList<>(rows.get(0).keySet());
+        List<String> columnTypes = dataSourceAbility.detectColumnTypes(rowList.get(0));
+
+        return Triple.of(rowList, columnNames, columnTypes);
     }
 
-    private void handleJsonLine() throws Exception {
+    private List<Map<String, Object>> readJsonLine() throws Exception {
         List<Map<String, Object>> rows = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             Map<String, Object> row = JsonUtil.fromJsonObject(reader.readLine());
             rows.add(row);
         }
-
-        log.info("start to import, total {}", rows.size());
-        long cost = System.currentTimeMillis();
-        handleAllRows(rows);
-        cost = System.currentTimeMillis() - cost;
-        log.info("finish to import, cost {}ms", cost);
+        return rows;
     }
 
-    private void handleJson() throws Exception {
-        List<Map<String, Object>> rows = (List) JsonUtil.fromJsonArray(
+    private List<Map<String, Object>> readJson() {
+        return (List<Map<String, Object>>) (List) JsonUtil.fromJsonArray(
                 new File(file), Map.class);
-
-        log.info("start to import, total {}", rows.size());
-        long cost = System.currentTimeMillis();
-        handleAllRows(rows);
-        cost = System.currentTimeMillis() - cost;
-        log.info("finish to import, cost {}ms", cost);
-    }
-
-    private void handleAllRows(List<Map<String, Object>> rows) throws Exception {
-        if (rows.isEmpty()) {
-            log.warn("json file is empty");
-            return;
-        }
-
-        List<List<Object>> list = rows.stream()
-                .map(row -> (List<Object>) new ArrayList(row.values()))
-                .collect(Collectors.toList());
-
-        List<String> columnNames = new ArrayList<>(rows.get(0).keySet());
-        List<String> columnTypes = dataSourceAbility.detectColumnTypes(list.get(0));
-
-        List<String> sqlList = new ArrayList<>();
-        List<List<List<Object>>> partition = ListUtil.partition(list, batchSize);
-        for (List<List<Object>> rowList : partition) {
-            String insertIntoSql = dataSourceAbility.getInsertIntoSql(rowList, columnNames, columnTypes,
-                    database, tableName, columnQuota);
-            sqlList.add(insertIntoSql);
-        }
-
-        if (!yes) {
-            outputAbility.run(sqlList);
-        } else {
-            jdbcAbility.executeSql(sqlList, verbose, abort);
-        }
     }
 }

@@ -1,7 +1,6 @@
 package org.dreamcat.daily.script;
 
 import lombok.extern.slf4j.Slf4j;
-import org.dreamcat.common.MutableInt;
 import org.dreamcat.common.Pair;
 import org.dreamcat.common.Quadruple;
 import org.dreamcat.common.argparse.ArgParserField;
