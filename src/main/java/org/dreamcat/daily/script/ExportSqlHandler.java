@@ -29,7 +29,7 @@ public class ExportSqlHandler extends BaseExportHandler {
             String sql = dataSource.getInsertIntoSql(rows, columnMap,
                     database, table, columnQuota);
             try {
-                outputAbility.run(Collections.singletonList(sql));
+                outputAbility.run(Collections.singletonList(sql), verbose);
             } catch (Exception e) {
                 log.error("failed to export {}.{}", database, table, e);
             }

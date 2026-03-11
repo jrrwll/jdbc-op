@@ -96,7 +96,7 @@ public class ImportExcelHandler extends BaseImportHandler {
         }
 
         if (!yes) {
-            outputAbility.run(sqlList);
+            outputAbility.run(sqlList, verbose);
         } else {
             jdbcAbility.executeSql(sqlList, verbose, abort);
         }

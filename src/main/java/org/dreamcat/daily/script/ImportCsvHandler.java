@@ -2,7 +2,6 @@ package org.dreamcat.daily.script;
 
 import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.common.Triple;
-import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.io.CsvUtil;
 import org.dreamcat.common.text.TextValueType;

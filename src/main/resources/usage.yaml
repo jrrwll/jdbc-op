@@ -25,11 +25,13 @@ inheritHelpParam:
 inheritHelpDesc:
   help: 打印此帮助
   debug: 打印debug信息
+  verbose: 详细输出模式
+  abort: 遇到异常中断执行
   jdbcUrl: JDBC连接参数：JDBC URL 地址
   user: JDBC连接参数：用户名
   password: JDBC连接参数：密码
   props: 额外的jdbc参数
-  driverPath: JDBC驱动jar包所在目录
+  driverPaths: JDBC驱动jar包所在目录
   driverClass: JDBC驱动全限定类名
   yes: 是否实际打开JDBC连接并执行SQL
   columnNameTemplate: 普通列名模板，例子：c_${type}_${index}
@@ -57,18 +59,30 @@ inheritHelpDesc:
   textTypeFile: 类型映射文件的路径
   textTypeFileContent: 类型映射文件的文件内容，与-t互斥，，优先取-t的值
   nullType: null值的默认类型
+  enableNeg: 是否允许生成负数
 
 subcommands:
+  import-json:
+    commandDesc: 将json数据导入到数据表中
+    header: "jdbc-op import-json 将json数据导入到数据表中"
+    helpParam:
+      tableName: 数据表名
+    helpDesc:
+      file: 数据文件的路径
+      database: 目标数据库
+      jsonNormal: json array格式
+      jsonLine: json line格式
+
   import-csv:
     commandDesc: 将csv数据导入到数据表中
     header: "jdbc-op import-csv 将csv数据导入到数据表中"
+    helpParam:
+      tableName: 数据表名
     helpDesc:
-      tableName: 数据表名，例如：my_table, my_db.my_table
-      tsv: 使用tsv格式解析而非csv
       file: 数据文件的路径
-      fileContent: 导入文件的内容，与-f互斥，，优先取-f的值
+      database: 目标数据库
+      tsv: 使用tsv格式解析而非csv
       emptyStringAsNull: 视空字符串为null
-      existing: 是否从现存的数据表中探查类型
 
   import-excel:
     commandDesc: 将excel数据导入到多张数据表中

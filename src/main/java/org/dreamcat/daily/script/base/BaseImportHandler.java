@@ -78,7 +78,7 @@ public abstract class BaseImportHandler extends BaseHandler {
             }
 
             if (!yes) {
-                outputAbility.run(sqlList);
+                outputAbility.run(sqlList, verbose);
             } else {
                 jdbcAbility.executeSql(sqlList, verbose, abort);
             }
