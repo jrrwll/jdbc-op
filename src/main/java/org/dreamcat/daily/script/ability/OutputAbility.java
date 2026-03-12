@@ -43,7 +43,7 @@ public class OutputAbility {
                 if (verbose) {
                     log.info("{}", sql);
                 }
-                appender.append(sql);
+                appender.append(sql + "\n");
             }
         }
     }

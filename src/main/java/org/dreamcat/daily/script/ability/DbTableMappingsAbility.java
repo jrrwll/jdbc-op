@@ -4,16 +4,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.common.Quadruple;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
-import org.dreamcat.common.json.JsonUtil;
-import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.daily.script.base.BaseHandler;
-import org.dreamcat.daily.script.common.AbortException;
+import org.dreamcat.daily.script.common.DbTableUtil;
 import org.dreamcat.daily.script.model.DbTableMappings;
 
-import java.io.File;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author Jerry Will
@@ -37,64 +36,34 @@ public class DbTableMappingsAbility {
         this.dataSource = dataSource;
         this.handler = handler;
 
-        if (dbTableMappingsFile != null) {
-            this.dbTableMappingsList = JsonUtil.fromJsonArray(
-                    new File(dbTableMappingsFile), DbTableMappings.class);
-        } else if (ObjectUtil.isNotEmpty(dbTableMappings)) {
-            this.dbTableMappingsList = JsonUtil.fromJsonArray(
-                    dbTableMappings, DbTableMappings.class);
-        } else {
-            throw new AbortException("no dbTableMappingsFile or dbTableMappings specified");
-        }
+        this.dbTableMappingsList = DbTableMappings.parse(dbTableMappingsFile, dbTableMappings);
     }
 
     public List<Quadruple<String, String, String, String>> mappingDbTables(Connection connection) throws Exception {
         List<Quadruple<String, String, String, String>> result = new ArrayList<>();
-        List<String> databases = dataSource.getDatabases(connection);
-        if (ObjectUtil.isEmpty(databases)) {
-            log.warn("no databases found");
+
+        Set<String> databases = dbTableMappingsList.stream()
+                .map(DbTableMappings::getDb)
+                .collect(Collectors.toSet());
+        if (DbTableUtil.checkExistingDatabases(dataSource, connection, databases)) {
             return result;
         }
 
-        for (String database : databases) {
-            String targetDatabase = getDatabaseMappings(database);
-            if (targetDatabase == null) {
-                continue;
-            }
+        for (DbTableMappings tableMappings : dbTableMappingsList) {
+            String db = tableMappings.getDb();
+            List<String> tables = new ArrayList<>(tableMappings.getTableMappings().keySet());
 
-            List<String> tables = dataSource.getTables(connection, database);
-            if (ObjectUtil.isEmpty(tables)) {
-                log.warn("no tables found on database {}", database);
-                continue;
-            }
-
+            DbTableUtil.checkExistingTables(
+                    dataSource, connection, db, db, tables);
             for (String table : tables) {
-                String targetTable = getTableMappings(database, table);
-                if (targetTable == null) {
-                    continue;
+                String targetTable = tableMappings.getTableMappings().get(table);
+                String targetDb = tableMappings.getTargetDb();
+                if (targetDb == null) {
+                    targetDb = db;
                 }
-
-                result.add(Quadruple.of(database, table, targetDatabase, targetTable));
+                result.add(Quadruple.of(db, table, targetDb, targetTable));
             }
         }
         return result;
     }
-
-    private String getDatabaseMappings(String database) {
-        return null;
-    }
-
-    private String getTableMappings(String database, String table) {
-        for (DbTableMappings tableMappings : dbTableMappingsList) {
-            if (!tableMappings.getDb().equals(database)) continue;
-            if (ObjectUtil.isEmpty(tableMappings.getTableMappings())) continue;
-
-            String mappingTable = tableMappings.getTableMappings().get(table);
-            if (mappingTable != null) {
-                return mappingTable;
-            }
-        }
-        return table;
-    }
-
 }

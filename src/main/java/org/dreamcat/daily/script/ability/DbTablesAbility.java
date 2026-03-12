@@ -4,16 +4,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.common.Pair;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
-import org.dreamcat.common.json.JsonUtil;
-import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.daily.script.base.BaseHandler;
-import org.dreamcat.daily.script.common.AbortException;
+import org.dreamcat.daily.script.common.DbTableUtil;
 import org.dreamcat.daily.script.model.DbTables;
 
-import java.io.File;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author Jerry Will
@@ -23,6 +22,8 @@ import java.util.List;
 @ArgParserType(allProperties = true)
 public class DbTablesAbility {
 
+    @ArgParserField
+    public List<String> tables; // no database specified
     @ArgParserField("dtf")
     public String dbTablesFile;
     @ArgParserField("dt")
@@ -37,26 +38,33 @@ public class DbTablesAbility {
         this.dataSource = dataSource;
         this.handler = handler;
 
-        if (dbTablesFile != null) {
-            this.dbTablesList = JsonUtil.fromJsonArray(
-                    new File(dbTablesFile), DbTables.class);
-        } else if (ObjectUtil.isNotEmpty(dbTables)) {
-            this.dbTablesList = JsonUtil.fromJsonArray(
-                    dbTables, DbTables.class);
-        } else {
-            throw new AbortException("no dbTablesFile or dbTables specified");
+        if (tables == null) {
+            this.dbTablesList = DbTables.parse(dbTablesFile, dbTables);
         }
     }
 
     public List<Pair<String, String>> getDbTables(Connection connection) throws Exception {
+        if (tables != null) {
+            return DbTableUtil.checkExistingTables(
+                    dataSource, connection,
+                    connection.getSchema(), null, tables);
+        }
+
         List<Pair<String, String>> result = new ArrayList<>();
-        List<String> databases = dataSource.getDatabases(connection);
-        if (ObjectUtil.isEmpty(databases)) {
-            log.warn("no databases found");
+
+        Set<String> databases = dbTablesList.stream()
+                .map(DbTables::getDb)
+                .collect(Collectors.toSet());
+        if (DbTableUtil.checkExistingDatabases(dataSource, connection, databases)) {
             return result;
         }
 
+        for (DbTables database : dbTablesList) {
+            String db = database.getDb();
+            result.addAll(DbTableUtil.checkExistingTables(
+                    dataSource, connection,
+                    db, db, database.getTables()));
+        }
         return result;
     }
-
 }
