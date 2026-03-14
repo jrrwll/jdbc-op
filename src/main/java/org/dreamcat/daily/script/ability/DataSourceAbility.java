@@ -180,7 +180,7 @@ public class DataSourceAbility {
                     "insert into %s(%s) values ", table, columnNameSql);
         }
 
-        return insertIntoSql + generateValues(rows, columnTypes);
+        return insertIntoSql + generateValues(rows, columnTypes) + ";";
     }
 
     public String getColumnCommentSql(String comment) {

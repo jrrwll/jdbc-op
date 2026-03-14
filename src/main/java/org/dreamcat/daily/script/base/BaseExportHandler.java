@@ -44,7 +44,7 @@ public abstract class BaseExportHandler extends BaseHandler {
         dataSource.init();
         dbTablesAbility.init(dataSource, this);
 
-        jdbcAbility.run(this::handle);
+        jdbcAbility.run(this::handle, verbose);
     }
 
     private void handle(Connection connection) throws Exception {

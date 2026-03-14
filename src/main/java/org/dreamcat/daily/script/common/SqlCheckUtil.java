@@ -30,6 +30,7 @@ public class SqlCheckUtil {
     }
 
     private static void config(CCJSqlParser parser, String datasourceType) {
+        if (datasourceType == null) return;
         switch (datasourceType) {
             case "mysql":
             case "doris":

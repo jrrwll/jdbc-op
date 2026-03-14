@@ -28,10 +28,8 @@ public class OutputAbility {
 
     public void run(List<String> sqlList, boolean verbose) throws IOException {
         if (rollingFile == null) {
-            if (verbose) {
-                for (String sql : sqlList) {
-                    log.info("{}", sql);
-                }
+            for (String sql : sqlList) {
+                log.info("{}", sql);
             }
             return;
         }

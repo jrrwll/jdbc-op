@@ -18,6 +18,11 @@ class BaseTest {
     final File mavenCacheDir = new File(homeDir, ".m2/repository");
     final File testResourceDir = new File("src/test/resources");
 
+    void run(String... args) {
+        System.out.println("jdbc-op " + String.join(" ", args));
+        Main.main(args);
+    }
+
     List<String> mysqlDriverPath() {
         // implementation 'mysql:mysql-connector-java:8.0.29'
         return driverPath("mysql", "mysql-connector-java", "8.0.29");

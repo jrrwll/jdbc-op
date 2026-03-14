@@ -1,13 +1,11 @@
 package org.dreamcat.daily.script.ability;
 
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.function.IConsumer;
 import org.dreamcat.common.sql.DriverUtil;
 import org.dreamcat.common.util.ExceptionUtil;
 import org.dreamcat.common.util.ObjectUtil;
-import org.dreamcat.daily.script.base.BaseHandler;
 
 import java.net.URL;
 import java.sql.Connection;
@@ -34,10 +32,7 @@ public class JdbcAbility {
     @ArgParserField(value = {"dp"})
     public List<String> driverPaths; // driver directory
 
-    @Setter
-    transient BaseHandler handler;
-
-    public void run(IConsumer<Connection> f) throws Exception {
+    public void run(IConsumer<Connection> f, boolean verbose) throws Exception {
         if (jdbcUrl == null) {
             f.accept(null);
             return;
@@ -59,7 +54,7 @@ public class JdbcAbility {
         }
 
         List<URL> urls = DriverUtil.parseJarPaths(driverPaths);
-        if (handler.verbose) {
+        if (verbose) {
             for (URL url : urls) {
                 log.info("add url to classloader: {}", url);
             }
@@ -91,6 +86,6 @@ public class JdbcAbility {
             }
             cost = System.currentTimeMillis() - cost;
             log.info("success to execute sql, cost {}ms", cost);
-        });
+        }, verbose);
     }
 }

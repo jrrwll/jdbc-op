@@ -34,6 +34,10 @@ public class DdlSqlAbility {
 
     transient DataSourceAbility dataSourceAbility;
 
+    public void init(DataSourceAbility dataSourceAbility) {
+        this.dataSourceAbility = dataSourceAbility;
+    }
+
     public List<String> checkAndGetCreateSql(
             Connection connection, String database, String table,
             List<String> columnNames, List<String> columnTypes,

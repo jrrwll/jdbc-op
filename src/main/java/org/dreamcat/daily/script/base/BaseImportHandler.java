@@ -45,6 +45,7 @@ public abstract class BaseImportHandler extends BaseHandler {
 
     public void init() throws Exception {
         dataSourceAbility.init();
+        ddlSqlAbility.init(dataSourceAbility);
     }
 
     protected void importTable(
@@ -59,7 +60,7 @@ public abstract class BaseImportHandler extends BaseHandler {
                         connection, database, tableName,
                         columnNames, columnTypes, compact, columnQuota);
                 sqlList.addAll(ddlSql);
-            });
+            }, verbose);
         }
 
         List<List<List<Object>>> partition = ListUtil.partition(rows, batchSize);

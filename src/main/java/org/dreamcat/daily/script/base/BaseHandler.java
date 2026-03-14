@@ -8,6 +8,7 @@ import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.CommandArgParser;
 import org.dreamcat.common.argparse.CommandHelpInfo;
 import org.dreamcat.common.json.YamlUtil;
+import org.dreamcat.daily.script.common.AbortException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,8 +57,13 @@ public abstract class BaseHandler implements ArgParserEntrypoint {
         try {
             this.run();
         } catch (Exception e) {
+            if (e instanceof AbortException) {
+                log.error(e.getMessage());
+            }
             log.error("run failed on unexpected exception", e);
-            System.exit(1);
+            if (!"1".equals(System.getProperty("disable_exit_code"))) {
+                System.exit(1);
+            }
         }
     }
 }

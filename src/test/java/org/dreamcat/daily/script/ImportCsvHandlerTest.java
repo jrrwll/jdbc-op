@@ -17,12 +17,12 @@ class ImportCsvHandlerTest extends BaseTest {
 
     @Test
     void testHelp() {
-        Main.main("import-csv", "-h");
+        run("import-csv", "-h");
     }
 
     @Test
     void test() throws Exception {
-        Main.main(
+        run(
                 "import-csv", "t_table_test", "-n", "3",
                 "-f", new File(testResourceDir, "test.csv").getCanonicalPath()
         );
@@ -32,9 +32,8 @@ class ImportCsvHandlerTest extends BaseTest {
     void testJdbc1() throws Exception {
         List<String> args = new ArrayList<>();
         args.addAll(Arrays.asList(
-                "import-csv", "t_table_test", "-b", "3",
-                "-F", ClassLoaderUtil.getResourceAsString("test.csv"),
-                "-T", ClassLoaderUtil.getResourceAsString("sqlite-text-types.txt")
+                "import-csv", "t_table_test", "-n", "3", "--create",
+                "-f", new File(testResourceDir, "test.csv").getCanonicalPath()
         ));
         args.addAll(Arrays.asList(
                 "-j", "jdbc:sqlite:build/temp.sqlite",

@@ -54,7 +54,7 @@ public class SyncHandler extends BaseHandler {
         List<Quadruple<String, String, String, String>> dbTableMappings = new ArrayList<>();
         jdbcFrom.run(connection -> {
             dbTableMappings.addAll(dbTableMappingsAbility.mappingDbTables(connection));
-        });
+        }, verbose);
         if (dbTableMappings.isEmpty()) return;
 
         for (Quadruple<String, String, String, String> quadruple : dbTableMappings) {
@@ -70,8 +70,8 @@ public class SyncHandler extends BaseHandler {
                     if (!ok) {
                         quit.set(true);
                     }
-                });
-            });
+                }, verbose);
+            }, verbose);
             if (quit.get()) {
                 break;
             }
