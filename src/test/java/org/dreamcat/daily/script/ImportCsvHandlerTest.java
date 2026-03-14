@@ -41,13 +41,16 @@ class ImportCsvHandlerTest extends BaseTest {
         ));
         args.addAll(sqliteDriverPath());
         run(args);
-    }
 
+        System.out.println("---- ---- ----    ---- ---- ----");
+        args.add("--yes");
+        run(args);
+    }
+g
     @Test
-    void testJdbc2() {
-        Main.main("import-csv", "t_table_test", "-b", "3",
-                "-f", "src/test/resources/test.csv",
-                "-t", "src/test/resources/mysql-text-types.txt"
+    void testJdbc2() throws Exception {
+        Main.main("import-csv", "t_table_test", "-n", "3", "-S", "mysql",
+                "-f", new File(testResourceDir, "test.csv").getCanonicalPath()
         );
     }
 }
