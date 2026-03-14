@@ -1,0 +1,53 @@
+sqlite:
+  string: text
+  boolean: integer
+  integer: integer
+  float: real
+  date: text
+  time: text
+  datetime: text
+
+mysql|starrocks|tidb:
+  string: varchar(500)
+  boolean: tinyint
+  integer: bigint
+  float: decimal(16,6)
+  date: date
+  time: time
+  datetime: datetime
+
+postgres:
+  string: varchar(500)
+  boolean: boolean
+  integer: bigint
+  float: numeric
+  date: date
+  time: time
+  datetime: timestamp
+
+clickhouse:
+  string: String
+  boolean: UInt8
+  integer: Int64
+  float: Decimal(16,6)
+  date: Date
+  time: String
+  datetime: DateTime
+
+hive:
+  string: string
+  boolean: boolean
+  integer: bigint
+  float: decimal
+  date: date
+  time: string
+  datetime: timestamp
+
+presto:
+  string: string
+  boolean: int
+  integer: int
+  float: float
+  date: date
+  time: string
+  datetime: datetime

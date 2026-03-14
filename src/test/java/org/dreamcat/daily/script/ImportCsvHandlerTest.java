@@ -36,7 +36,7 @@ class ImportCsvHandlerTest extends BaseTest {
                 "-f", new File(testResourceDir, "test.csv").getCanonicalPath()
         ));
         args.addAll(Arrays.asList(
-                "-j", "jdbc:sqlite:build/temp.sqlite",
+                "-S", "sqlite", "-j", "jdbc:sqlite:build/temp.sqlite",
                 "--dc", "org.sqlite.JDBC", "--dp"
         ));
         args.addAll(sqliteDriverPath());

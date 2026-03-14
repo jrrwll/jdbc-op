@@ -33,8 +33,8 @@ public class SqlCheckUtil {
         if (datasourceType == null) return;
         switch (datasourceType) {
             case "mysql":
-            case "doris":
             case "starrocks":
+            case "tidb":
                 parser.withBackslashEscapeCharacter();
                 break;
             case "sqlserver":

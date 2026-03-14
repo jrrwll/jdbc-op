@@ -1,9 +1,13 @@
 package org.dreamcat.daily.script.ability;
 
+import static org.dreamcat.common.util.ClassLoaderUtil.getResourceAsString;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.common.Pair;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
+import org.dreamcat.common.json.JsonUtil;
 import org.dreamcat.common.json.YamlUtil;
 import org.dreamcat.common.sql.JdbcColumnDef;
 import org.dreamcat.common.sql.JdbcUtil;
@@ -25,10 +29,10 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -48,6 +52,7 @@ public class DataSourceAbility {
     public double nullRatio = 0;
     public String rowNullRatio; // like this 'ratio,rows', example: 0.5,10
     public Set<String> converters; // binary:cast($value as $type)
+    public String textTypes; // json, type like: Map<TextValueType, String>
 
     transient String databaseSchemaSql;
     transient String tableSchemaSql;
@@ -198,9 +203,9 @@ public class DataSourceAbility {
     }
 
     public String detectColumnType(Object value) {
-        return null;
-        // TextValueType textValueType = TextValueType.detectObject(value);
-        // return textValueTypeMapping.get(textValueType);
+        if (ObjectUtil.isEmpty(textValueTypeMapping)) return null;
+        TextValueType textValueType = TextValueType.detectObject(value);
+        return textValueTypeMapping.get(textValueType);
     }
 
     // ---- ---- ---- ----    ---- ---- ---- ----    ---- ---- ---- ----
@@ -253,10 +258,10 @@ public class DataSourceAbility {
 
         if (dataSourceType == null) return;
 
-        DataSourceInfos dataSourceInfos = YamlUtil.fromJson(ClassLoaderUtil.getResourceAsString(
+        DataSourceInfos infos = YamlUtil.fromJson(getResourceAsString(
                 "datasource.yaml"), DataSourceInfos.class);
         // alias
-        for (Entry<String, List<String>> entry : dataSourceInfos.getDataSourceAlias().entrySet()) {
+        for (Entry<String, List<String>> entry : infos.getDatasourceAlias().entrySet()) {
             if (entry.getValue().contains(dataSourceType)) {
                 dataSourceType = entry.getKey();
                 break;
@@ -264,7 +269,7 @@ public class DataSourceAbility {
         }
 
         // register builtin cast literal
-        for (Entry<String, Map<String, List<String>>> entry : dataSourceInfos.getCastLiteral().entrySet()) {
+        for (Entry<String, Map<String, List<String>>> entry : infos.getCastLiteral().entrySet()) {
             String template = entry.getKey();
             for (String columnType : entry.getValue().getOrDefault(dataSourceType, Collections.emptyList())) {
                 registerLiteralConvertor(columnType, template);
@@ -283,30 +288,45 @@ public class DataSourceAbility {
         }
 
         // schema sql
-        for (Entry<String, List<String>> entry : dataSourceInfos.getDatabaseSchemaSql().entrySet()) {
+        for (Entry<String, List<String>> entry : infos.getDatabaseSchemaSql().entrySet()) {
             if (entry.getValue().contains(dataSourceType)) {
                 databaseSchemaSql = entry.getKey();
             }
         }
-        for (Entry<String, List<String>> entry : dataSourceInfos.getTableSchemaSql().entrySet()) {
+        for (Entry<String, List<String>> entry : infos.getTableSchemaSql().entrySet()) {
             if (entry.getValue().contains(dataSourceType)) {
                 tableSchemaSql = entry.getKey();
             }
         }
-        for (Entry<String, List<String>> entry : dataSourceInfos.getColumnSchemaSql().entrySet()) {
+        for (Entry<String, List<String>> entry : infos.getColumnSchemaSql().entrySet()) {
             if (entry.getValue().contains(dataSourceType)) {
                 columnSchemaSql = entry.getKey();
             }
         }
 
         // other
-        for (Entry<String, List<String>> entry : dataSourceInfos.getColumnSchemaSql().entrySet()) {
+        for (Entry<String, List<String>> entry : infos.getColumnSchemaSql().entrySet()) {
             if (entry.getValue().contains(dataSourceType)) {
                 columnCommentSql = entry.getKey();
             }
         }
 
-        doubleQuota = dataSourceInfos.getDoubleQuota().contains(dataSourceType);
+        doubleQuota = infos.getDoubleQuota().contains(dataSourceType);
+
+        // text types
+        Map<String, Map<String, String>> textTypeMaps = YamlUtil.fromJson(
+                getResourceAsString("datasource-text-types.yaml"),
+                new TypeReference<Map<String, Map<String, String>>>() {});
+        textValueTypeMapping = new EnumMap<>(TextValueType.class);
+        Map<String, String> textTypeMap = textTypeMaps.getOrDefault(dataSourceType, Collections.emptyMap());
+        if (ObjectUtil.isNotEmpty(textTypes)) {
+            Map<String, String> customTextTypeMap = JsonUtil.fromJsonObject(textTypes, String.class);
+            textTypeMap = new HashMap<>(textTypeMap);
+            textTypeMap.putAll(customTextTypeMap);
+        }
+        for (Entry<String, String> entry : textTypeMap.entrySet()) {
+            textValueTypeMapping.put(TextValueType.valueOf(entry.getKey().toUpperCase()), entry.getValue());
+        }
     }
 
     private String convert(String literal, String typeName) {

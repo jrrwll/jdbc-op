@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -50,6 +51,10 @@ public class DdlSqlAbility {
         if (tableLike.isEmpty()) {
             log.info("table {} does not exist, generating DDL sql to create it", table);
 
+            if (columnTypes.stream().anyMatch(Objects::isNull)) {
+                throw new AbortException("unsupported datasource " + dataSourceAbility.dataSourceType +
+                        ", need custom text type mapping: --text-types <textTypes>");
+            }
             return getCreateTableSql(
                     table, columnNames, columnTypes,
                     compact, columnQuota);
@@ -67,7 +72,7 @@ public class DdlSqlAbility {
         return Collections.emptyList();
     }
 
-    public List<String> getCreateTableSql(
+    private List<String> getCreateTableSql(
             String tableName, List<String> columnNames, List<String> columnTypes,
             boolean compact, boolean columnQuota) {
         List<String> ddlList = new ArrayList<>();
