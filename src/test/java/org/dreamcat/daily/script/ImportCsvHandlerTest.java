@@ -40,7 +40,7 @@ class ImportCsvHandlerTest extends BaseTest {
                 "--dc", "org.sqlite.JDBC", "--dp"
         ));
         args.addAll(sqliteDriverPath());
-        CommandArgParser.run(Main.class, args);
+        run(args);
     }
 
     @Test

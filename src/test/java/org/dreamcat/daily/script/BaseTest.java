@@ -18,6 +18,10 @@ class BaseTest {
     final File mavenCacheDir = new File(homeDir, ".m2/repository");
     final File testResourceDir = new File("src/test/resources");
 
+    void run(List<String> args) {
+        run(args.stream().toArray(String[]::new));
+    }
+
     void run(String... args) {
         System.out.println("jdbc-op " + String.join(" ", args));
         Main.main(args);
