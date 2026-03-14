@@ -9,11 +9,9 @@ import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.excel.ExcelUtil;
 import org.dreamcat.common.util.ExceptionUtil;
-import org.dreamcat.common.util.ListUtil;
 import org.dreamcat.daily.script.base.BaseImportHandler;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -80,25 +78,6 @@ public class ImportExcelHandler extends BaseImportHandler {
             log.info("success to import {} {}, cost {}ms", sheetName, header, cost);
 
             sheetIndex++;
-        }
-    }
-
-    private void importTable(String tableName, List<String> columnNames, List<List<Object>> rows) throws Exception {
-        List<String> columnTypes = dataSourceAbility.detectColumnTypes(rows.get(0));
-
-        List<String> sqlList = new ArrayList<>();
-        List<List<List<Object>>> partition = ListUtil.partition(rows, batchSize);
-        for (List<List<Object>> rowList : partition) {
-            String insertIntoSql = dataSourceAbility.getInsertIntoSql(
-                    rowList, columnNames, columnTypes,
-                    database, tableName, columnQuota);
-            sqlList.add(insertIntoSql);
-        }
-
-        if (!yes) {
-            outputAbility.run(sqlList, verbose);
-        } else {
-            jdbcAbility.executeSql(sqlList, verbose, abort);
         }
     }
 }

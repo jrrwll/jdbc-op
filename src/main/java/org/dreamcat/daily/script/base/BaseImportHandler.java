@@ -1,10 +1,11 @@
 package org.dreamcat.daily.script.base;
 
 import lombok.extern.slf4j.Slf4j;
-import org.dreamcat.common.Triple;
+import org.dreamcat.common.Pair;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.util.ListUtil;
 import org.dreamcat.daily.script.ability.DataSourceAbility;
+import org.dreamcat.daily.script.ability.DdlSqlAbility;
 import org.dreamcat.daily.script.ability.JdbcAbility;
 import org.dreamcat.daily.script.ability.OutputAbility;
 
@@ -16,7 +17,6 @@ import java.util.List;
  * @version 2023-06-27
  */
 @Slf4j
-@SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class BaseImportHandler extends BaseHandler {
 
     @ArgParserField(nested = true)
@@ -32,12 +32,49 @@ public abstract class BaseImportHandler extends BaseHandler {
     protected int batchSize = 1000;
 
     @ArgParserField
+    protected boolean compact;
+    @ArgParserField
     protected boolean columnQuota;
     @ArgParserField
     protected boolean yes;
 
+    @ArgParserField({"create"})
+    protected boolean createTableIfNotExists;
+    @ArgParserField(nested = true)
+    protected DdlSqlAbility ddlSqlAbility;
+
     public void init() throws Exception {
         dataSourceAbility.init();
+    }
+
+    protected void importTable(
+            String tableName, List<String> columnNames,
+            List<List<Object>> rows) throws Exception {
+        List<String> columnTypes = dataSourceAbility.detectColumnTypes(rows.get(0));
+
+        List<String> sqlList = new ArrayList<>();
+        if (createTableIfNotExists) {
+            jdbcAbility.run(connection -> {
+                List<String> ddlSql = ddlSqlAbility.checkAndGetCreateSql(
+                        connection, database, tableName,
+                        columnNames, columnTypes, compact, columnQuota);
+                sqlList.addAll(ddlSql);
+            });
+        }
+
+        List<List<List<Object>>> partition = ListUtil.partition(rows, batchSize);
+        for (List<List<Object>> rowList : partition) {
+            String insertIntoSql = dataSourceAbility.getInsertIntoSql(
+                    rowList, columnNames, columnTypes,
+                    database, tableName, columnQuota);
+            sqlList.add(insertIntoSql);
+        }
+
+        if (!yes) {
+            outputAbility.run(sqlList, verbose);
+        } else {
+            jdbcAbility.executeSql(sqlList, verbose, abort);
+        }
     }
 
     public static abstract class SingleTable extends BaseImportHandler {
@@ -48,40 +85,20 @@ public abstract class BaseImportHandler extends BaseHandler {
         @ArgParserField(position = 1)
         private String tableName;
 
+        protected abstract Pair<List<String>, List<List<Object>>> readAllRows() throws Exception;
+
         @Override
         public void run() throws Exception {
             init();
 
-            Triple<List<List<Object>>, List<String>, List<String>> triple = readAllRows();
-            log.info("start to import, total {}", triple.first().size());
+            Pair<List<String>, List<List<Object>>> pair = readAllRows();
+            log.info("start to import, total {}", pair.first().size());
             long cost = System.currentTimeMillis();
-            handleAllRows(triple.first(), triple.second(), triple.third());
+            List<String> columnNames = pair.first();
+            List<List<Object>> rows = pair.second();
+            importTable(tableName, columnNames, rows);
             cost = System.currentTimeMillis() - cost;
             log.info("finish to import, cost {}ms", cost);
-        }
-
-        protected abstract Triple<List<List<Object>>, List<String>, List<String>> readAllRows() throws Exception;
-
-        private void handleAllRows(List<List<Object>> rows,
-                List<String> columnNames, List<String> columnTypes) throws Exception {
-            if (rows.isEmpty()) {
-                log.warn("input file is empty");
-                return;
-            }
-
-            List<String> sqlList = new ArrayList<>();
-            List<List<List<Object>>> partition = ListUtil.partition(rows, batchSize);
-            for (List<List<Object>> rowList : partition) {
-                String insertIntoSql = dataSourceAbility.getInsertIntoSql(rowList, columnNames, columnTypes,
-                        database, tableName, columnQuota);
-                sqlList.add(insertIntoSql);
-            }
-
-            if (!yes) {
-                outputAbility.run(sqlList, verbose);
-            } else {
-                jdbcAbility.executeSql(sqlList, verbose, abort);
-            }
         }
     }
 }

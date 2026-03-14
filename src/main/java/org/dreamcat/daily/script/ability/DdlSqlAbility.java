@@ -1,28 +1,71 @@
 package org.dreamcat.daily.script.ability;
 
+import lombok.extern.slf4j.Slf4j;
+import org.dreamcat.common.sql.JdbcColumnDef;
+import org.dreamcat.common.sql.JdbcUtil;
 import org.dreamcat.common.text.InterpolationUtil;
 import org.dreamcat.common.util.MapUtil;
+import org.dreamcat.common.util.SetUtil;
 import org.dreamcat.common.util.StringUtil;
+import org.dreamcat.daily.script.common.AbortException;
+import org.dreamcat.daily.script.common.SqlCheckUtil;
 
-import java.util.*;
-import java.util.Map.Entry;
+import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Jerry Will
  * @version 2026-03-07
  */
+@Slf4j
 public class DdlSqlAbility {
 
     String preColumnDefSql;
     String postColumnDefSql;
     String postTableDefSql;
-
     String columnCommentTemplate; //such as: Column Type: $type
+
+    boolean noCheckSql;
 
     transient DataSourceAbility dataSourceAbility;
 
-    public List<String> getCreateTableSql(String tableName, Map<String, String> columns, boolean compact,
-            boolean columnQuota) {
+    public List<String> checkAndGetCreateSql(
+            Connection connection, String database, String table,
+            List<String> columnNames, List<String> columnTypes,
+            boolean compact, boolean columnQuota) throws Exception {
+        String schema = database;
+        if (database== null) {
+            schema = connection.getSchema();
+        }
+        List<String> tableLike = JdbcUtil.getTableLike(connection, schema, table);
+        if (tableLike.isEmpty()) {
+            log.info("table {} does not exist, generating DDL sql to create it", table);
+
+            return getCreateTableSql(
+                    table, columnNames, columnTypes,
+                    compact, columnQuota);
+        }
+
+        log.info("table {} already exists, verify the columns instead of creating it", table);
+
+        Map<String, JdbcColumnDef> columnMap = dataSourceAbility.getColumnMap(connection, schema, table);
+
+        Set<String> noExistingColumns = SetUtil.difference(new HashSet<>(columnNames), columnMap.keySet());
+        if (!noExistingColumns.isEmpty()) {
+            throw new AbortException("columns " + String.join(", ", noExistingColumns) +
+                    " does not exist in table " + table);
+        }
+        return Collections.emptyList();
+    }
+
+    public List<String> getCreateTableSql(
+            String tableName, List<String> columnNames, List<String> columnTypes,
+            boolean compact, boolean columnQuota) {
         List<String> ddlList = new ArrayList<>();
 
         String sep = compact ? " " : "\n";
@@ -33,14 +76,13 @@ public class DdlSqlAbility {
         }
 
         // column
-        int columnCount = columns.size();
+        int columnCount = columnNames.size();
         List<String> columnDefSqlList = new ArrayList<>(columnCount);
         List<String> columnCommentSqlList = new ArrayList<>(columnCount);
 
-        List<String> columnNames = new ArrayList<>(columnCount);
-        for (Entry<String, String> entry : columns.entrySet()) {
-            String columnName = entry.getKey();
-            String columnType = entry.getValue();
+        for (int i = 0; i < columnCount; i++) {
+            String columnName = columnNames.get(i);
+            String columnType = columnTypes.get(i);
 
             String columnDefSql = dataSourceAbility.formatColumnName(columnName, columnQuota) + " " + columnType;
             if (!compact) columnDefSql = "    " + columnDefSql;
@@ -71,7 +113,11 @@ public class DdlSqlAbility {
             createTableSql.append(" ").append(postTableDefSql);
         }
         createTableSql.append(";");
-        ddlList.add(createTableSql.toString());
+        String createTableSqlStr = createTableSql.toString();
+        if (!noCheckSql) {
+            SqlCheckUtil.check(createTableSqlStr, dataSourceAbility.dataSourceType);
+        }
+        ddlList.add(createTableSqlStr);
 
         for (String s : columnCommentSqlList) {
             if (!s.endsWith(";")) s += ";";

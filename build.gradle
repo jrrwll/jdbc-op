@@ -25,8 +25,6 @@ allprojects {
         implementation libs.slf4j.api
 
         implementation libs.common
-        implementation libs.common.excel
-        implementation libs.jackson.yaml
     }
 
     tasks.register('printVersion') {
@@ -43,9 +41,12 @@ allprojects {
 }
 
 dependencies {
-
-    implementation libs.bundles.jackson
     implementation libs.bundles.log4j2
+    implementation libs.bundles.jackson
+    implementation libs.jackson.yaml
+
+    implementation libs.common.excel
+    implementation libs.jsqlparser
 }
 
 jar {

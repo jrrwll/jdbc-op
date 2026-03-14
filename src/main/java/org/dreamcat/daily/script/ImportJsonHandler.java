@@ -1,7 +1,7 @@
 package org.dreamcat.daily.script;
 
 import lombok.extern.slf4j.Slf4j;
-import org.dreamcat.common.Triple;
+import org.dreamcat.common.Pair;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.io.FileUtil;
@@ -32,7 +32,7 @@ public class ImportJsonHandler extends BaseImportHandler.SingleTable {
     boolean jsonNormal;
 
     @Override
-    protected Triple<List<List<Object>>, List<String>, List<String>> readAllRows() throws Exception {
+    protected Pair<List<String>, List<List<Object>>> readAllRows() throws Exception {
         if (file == null) {
             throw new AbortException("require file: -f|--file <file>");
         }
@@ -53,14 +53,11 @@ public class ImportJsonHandler extends BaseImportHandler.SingleTable {
             }
         }
 
+        List<String> columnNames = new ArrayList<>(rows.get(0).keySet());
         List<List<Object>> rowList = rows.stream()
                 .map(row -> (List<Object>) new ArrayList(row.values()))
                 .collect(Collectors.toList());
-
-        List<String> columnNames = new ArrayList<>(rows.get(0).keySet());
-        List<String> columnTypes = dataSourceAbility.detectColumnTypes(rowList.get(0));
-
-        return Triple.of(rowList, columnNames, columnTypes);
+        return Pair.of(columnNames, rowList);
     }
 
     private List<Map<String, Object>> readJsonLine() throws Exception {

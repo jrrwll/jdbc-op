@@ -1,7 +1,7 @@
 package org.dreamcat.daily.script;
 
 import lombok.extern.slf4j.Slf4j;
-import org.dreamcat.common.Triple;
+import org.dreamcat.common.Pair;
 import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.io.CsvUtil;
 import org.dreamcat.common.text.TextValueType;
@@ -23,7 +23,7 @@ public class ImportCsvHandler extends SingleTable {
     private boolean emptyStringAsNull;
 
     @Override
-    protected Triple<List<List<Object>>, List<String>, List<String>> readAllRows() throws Exception {
+    protected Pair<List<String>, List<List<Object>>> readAllRows() throws Exception {
         List<List<String>> rows;
         if (tsv) {
             rows = CsvUtil.readTsv(new File(file));
@@ -47,8 +47,7 @@ public class ImportCsvHandler extends SingleTable {
                 .filter(row -> row.size() == columnNames.size())
                 .map(this::mapToRow)
                 .collect(Collectors.toList());
-        List<String> columnTypes = dataSourceAbility.detectColumnTypes(rowList.get(0));
-        return Triple.of(rowList, columnNames, columnTypes);
+        return Pair.of(columnNames, rowList);
     }
 
     private List<Object> mapToRow(List<String> row) {
