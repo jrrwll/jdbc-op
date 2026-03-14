@@ -46,7 +46,7 @@ class ImportCsvHandlerTest extends BaseTest {
         args.add("--yes");
         run(args);
     }
-g
+
     @Test
     void testJdbc2() throws Exception {
         Main.main("import-csv", "t_table_test", "-n", "3", "-S", "mysql",
