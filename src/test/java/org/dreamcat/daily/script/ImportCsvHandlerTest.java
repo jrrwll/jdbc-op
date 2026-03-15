@@ -1,7 +1,5 @@
 package org.dreamcat.daily.script;
 
-import org.dreamcat.common.argparse.CommandArgParser;
-import org.dreamcat.common.util.ClassLoaderUtil;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
