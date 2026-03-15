@@ -12,8 +12,10 @@ import org.dreamcat.daily.script.ability.DataSourceAbility;
 import org.dreamcat.daily.script.ability.DbTableMappingsAbility;
 import org.dreamcat.daily.script.ability.JdbcAbility;
 import org.dreamcat.daily.script.base.BaseHandler;
+import org.dreamcat.daily.script.common.AbortException;
 
 import java.sql.Connection;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +43,9 @@ public class SyncHandler extends BaseHandler {
     DbTableMappingsAbility dbTableMappingsAbility;
 
     @ArgParserField({"n"})
-    private int batchSize = 1000;
+    int batchSize = 1000;
+    boolean columnQuota;
+    boolean yes;
 
     @Override
     public void run() throws Exception {
@@ -115,6 +119,24 @@ public class SyncHandler extends BaseHandler {
     private void doHandleRows(String targetDatabase, String targetTable,
             List<Map<String, Object>> rows, Map<String, JdbcColumnDef> columnMap,
             Connection targetConnection) {
-
+        String insertIntoSql = dataSourceTo.getInsertIntoSql(rows, columnMap, targetDatabase, targetTable, columnQuota);
+        if (verbose) {
+            log.info("{}", insertIntoSql);
+        }
+        if (!yes) {
+            return;
+        }
+        try (Statement statement = targetConnection.createStatement()) {
+            statement.executeUpdate(insertIntoSql);
+        } catch (Exception e) {
+            if (abort) {
+                throw new AbortException("abort by exception", e);
+            }
+            if (verbose) {
+                log.error("failed to execute insertIntoSql: {}", e.getMessage(), e);
+            } else {
+                log.error("failed to execute insertIntoSql: {}", e.getMessage());
+            }
+        }
     }
 }
