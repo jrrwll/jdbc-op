@@ -38,7 +38,8 @@ public class RandomGenerateAbility {
         }
     }
 
-    public void init() throws Exception {
+    public void init(DataSourceAbility dataSourceAbility) throws Exception {
+        this.dataSourceAbility = dataSourceAbility;
         dataSourceAbility.valueGenerator.setEnableNeg(enableNeg);
 
         // row null ratio
