@@ -1,0 +1,130 @@
+clickhouse:
+  - decimal(16, 6)
+  - fixedstring(100)
+  - enum8($enums)
+  - enum16($enums)
+  - uint8
+  - uint16
+  - uint32
+  - uint64
+  - int8
+  - int16
+  - int32
+  - int64
+  - float32
+  - float64
+  - date
+  - datetime
+  - string
+  - uuid
+
+hive:
+  - boolean
+  - tinyint
+  - smallint
+  - int
+  - bigint
+  - float
+  - double
+  - decimal
+  - timestamp
+  - date
+  - string
+  - char(100)
+  - varchar(100)
+  - binary
+
+mysql:
+  - bit(1)
+  - bit(100)
+  - tinyint
+  - tinyint unsigned
+  - smallint
+  - smallint unsigned
+  - mediumint
+  - mediumint unsigned
+  - int
+  - int unsigned
+  - bigint
+  - bigint unsigned
+  - float
+  - float unsigned
+  - double unsigned
+  - decimal(16,6)
+  - decimal(16,6) unsigned
+  - real
+  - real unsigned
+  - char(100)
+  - varchar(100)
+  - nchar(100)
+  - nvarchar(100)
+  - tinytext
+  - mediumtext
+  - text
+  - longtext
+  - json
+  - timestamp
+  - date
+  - datetime
+  - year
+  - time
+  - tinyblob
+  - mediumblob
+  - blob
+  - longblob
+  - binary(100)
+  - varbinary(100)
+  - set($enums)
+  - enum($enums)
+
+postgres:
+  - tstzrange
+  - bit(1)
+  - bit(100)
+  - tsvector
+  - int2
+  - character(100)
+  - int4
+  - int8
+  - numrange
+  - tsrange
+  - text
+  - bpchar
+  - interval
+  - circle
+  - smallint
+  - tsquery
+  - cidr
+  - lseg
+  - timestamp
+  - daterange
+  - float8
+  - float4
+  - int4range
+  - varbit(100)
+  - jsonb
+  - polygon
+  - char(100)
+  - date
+  - integer
+  - float
+  - uuid
+  - int8range
+  - inet
+  - real
+  - name
+  - timestamptz
+  - bool
+  - bytea
+  - numeric
+  - box
+  - oid
+  - point
+  - json
+  - bigint
+  - varchar(100)
+  - int
+  - macaddr
+  - boolean
+  - time
+  - timetz

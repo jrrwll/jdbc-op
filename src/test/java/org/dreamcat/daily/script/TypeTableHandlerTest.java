@@ -87,7 +87,7 @@ class TypeTableHandlerTest extends BaseTest {
 }
 /*
 
-set hive.exec.dynamic.partition=true
-set hive.exec.dynamic.partition_mode=nonstrict
+set hive.exec.dynamic.partition=true;
+set hive.exec.dynamic.partition_mode=nonstrict;
 
 */

@@ -72,7 +72,7 @@ public class DdlSqlAbility {
         return Collections.emptyList();
     }
 
-    private List<String> getCreateTableSql(
+    public List<String> getCreateTableSql(
             String tableName, List<String> columnNames, List<String> columnTypes,
             boolean compact, boolean columnQuota) {
         List<String> ddlList = new ArrayList<>();
@@ -91,6 +91,7 @@ public class DdlSqlAbility {
 
         for (int i = 0; i < columnCount; i++) {
             String columnName = columnNames.get(i);
+            if (columnName.startsWith("@")) continue; // partitioned columns
             String columnType = columnTypes.get(i);
 
             String columnDefSql = dataSourceAbility.formatColumnName(columnName, columnQuota) + " " + columnType;
@@ -120,6 +121,22 @@ public class DdlSqlAbility {
 
         if (StringUtil.isNotBlank(postTableDefSql)) {
             createTableSql.append(" ").append(postTableDefSql);
+        } else {
+            // only works if no --post-table-def-sql
+            List<String> partitionColumnDefSqlList = new ArrayList<>();
+            for (int i = 0; i < columnCount; i++) {
+                String columnName = columnNames.get(i);
+                if (!columnName.startsWith("@")) continue;
+                String columnType = columnTypes.get(i);
+
+                partitionColumnDefSqlList.add(columnName.substring(1) + " " + columnType);
+            }
+            if (!partitionColumnDefSqlList.isEmpty()) {
+                createTableSql.append(sep)
+                        .append("partitioned by (")
+                        .append(String.join(", ", partitionColumnDefSqlList))
+                        .append(")");
+            }
         }
         createTableSql.append(";");
         String createTableSqlStr = createTableSql.toString();

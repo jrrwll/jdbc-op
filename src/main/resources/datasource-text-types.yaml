@@ -43,7 +43,7 @@ hive:
   time: string
   datetime: timestamp
 
-presto:
+presto|trino:
   string: string
   boolean: int
   integer: int

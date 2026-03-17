@@ -21,6 +21,9 @@ import org.dreamcat.daily.script.base.BaseHandler;
                 ImportCsvHandler.class,
                 ImportExcelHandler.class,
                 ImportJsonHandler.class,
+                // generate
+                TypeTableHandler.class,
+                InsertRandomHandler.class,
         })
 public class Main extends BaseHandler {
 

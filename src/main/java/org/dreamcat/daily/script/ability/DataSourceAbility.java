@@ -3,7 +3,9 @@ package org.dreamcat.daily.script.ability;
 import static org.dreamcat.common.util.ClassLoaderUtil.getResourceAsString;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.dreamcat.common.Triple;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.json.JsonUtil;
@@ -25,6 +27,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -51,16 +54,19 @@ public class DataSourceAbility {
     transient String databaseSchemaSql;
     transient String tableSchemaSql;
     transient String columnSchemaSql;
-    transient String  columnCommentSql;
+    transient String columnCommentSql;
     transient boolean doubleQuota; // "c1" or `c2`
 
     transient EnumMap<TextValueType, String> textValueTypeMapping;
+    @Getter
+    transient List<String> allTypes;
 
     transient SqlLiteralConvertor literalConvertor;
     transient SqlValueGenerator valueGenerator;
 
     private static final String select_without_database_sql = "select * from $table";
-    private static final String select_sql = "select * from $database.$table";;
+    private static final String select_sql = "select * from $database.$table";
+    ;
 
     // ==== ==== ==== ====    ==== ==== ==== ====    ==== ==== ==== ====
 
@@ -164,20 +170,51 @@ public class DataSourceAbility {
             List<List<Object>> rows,
             List<String> columnNames, List<String> columnTypes,
             String database, String table, boolean columnQuota) {
-        String columnNameSql = StringUtil.join(",", columnNames, columnName -> {
+        String databasePrefix = database != null ? database + "." : "";
+
+        // dynamic partition
+        Triple<List<String>, List<String>, String> triple = splitPartitions(columnNames, columnTypes, columnQuota);
+        columnNames = triple.first();
+        columnTypes = triple.second();
+        String partitionSql = triple.third();
+
+        String columnNameSql = getColumnNameSql(columnNames, columnQuota);
+        String insertIntoSql = String.format(
+                "insert into %s(%s)%s values ", databasePrefix + table, partitionSql, columnNameSql);
+        return insertIntoSql + generateValues(rows, columnTypes) + ";";
+    }
+
+    private Triple<List<String>, List<String>, String> splitPartitions(
+            List<String> columnNames, List<String> columnTypes, boolean columnQuota) {
+        List<String> noPartitionColumnNames = new ArrayList<>();
+        List<String> noPartitionColumnTypes = new ArrayList<>();
+        List<String> partitionColumnNames = new ArrayList<>();
+
+        int columnCount = columnNames.size();
+        for (int i = 0; i < columnCount; i++) {
+            String columnName = columnNames.get(i);
+            String columnType = columnTypes.get(i);
+
+            if (columnName.startsWith("@")) {
+                partitionColumnNames.add(columnName.substring(1));
+            } else {
+                noPartitionColumnNames.add(columnName);
+                noPartitionColumnTypes.add(columnType);
+            }
+        }
+        String partitionSql = "";
+        if (!partitionColumnNames.isEmpty()) {
+            partitionSql = " partition (" + getColumnNameSql(partitionColumnNames, columnQuota) + ")";
+        }
+
+        return Triple.of(noPartitionColumnNames, noPartitionColumnTypes, partitionSql);
+    }
+
+    private String getColumnNameSql(List<String> columnNames, boolean columnQuota) {
+        return StringUtil.join(",", columnNames, columnName -> {
             if (!columnQuota) return columnName;
             return StringUtil.escape(columnName, doubleQuota ? "\"" : "`");
         });
-        String insertIntoSql;
-        if (database != null) {
-            insertIntoSql = String.format(
-                    "insert into %s.%s(%s) values ", database, table, columnNameSql);
-        } else {
-            insertIntoSql = String.format(
-                    "insert into %s(%s) values ", table, columnNameSql);
-        }
-
-        return insertIntoSql + generateValues(rows, columnTypes) + ";";
     }
 
     public String getColumnCommentSql(String comment) {
@@ -273,9 +310,10 @@ public class DataSourceAbility {
         // text types
         Map<String, Map<String, String>> textTypeMaps = YamlUtil.fromJson(
                 getResourceAsString("datasource-text-types.yaml"),
-                new TypeReference<Map<String, Map<String, String>>>() {});
+                new TypeReference<Map<String, Map<String, String>>>() {
+                });
         textValueTypeMapping = new EnumMap<>(TextValueType.class);
-        Map<String, String> textTypeMap = textTypeMaps.getOrDefault(dataSourceType, Collections.emptyMap());
+        Map<String, String> textTypeMap = getByDatasourceType(textTypeMaps, Collections.emptyMap());
         if (ObjectUtil.isNotEmpty(textTypes)) {
             Map<String, String> customTextTypeMap = JsonUtil.fromJsonObject(textTypes, String.class);
             textTypeMap = new HashMap<>(textTypeMap);
@@ -284,6 +322,20 @@ public class DataSourceAbility {
         for (Entry<String, String> entry : textTypeMap.entrySet()) {
             textValueTypeMapping.put(TextValueType.valueOf(entry.getKey().toUpperCase()), entry.getValue());
         }
+
+        // all-types
+        Map<String, List<String>> allTypeMaps = YamlUtil.fromJson(
+                getResourceAsString("datasource-all-types.yaml"),
+                new TypeReference<Map<String, List<String>>>() {
+                });
+        allTypes = getByDatasourceType(allTypeMaps, Collections.emptyList());
+    }
+
+    private <T> T getByDatasourceType(Map<String, T> map, T defaultValue) {
+        return map.entrySet().stream()
+                .filter(e -> Arrays.asList(e.getKey().split(",")).contains(dataSourceType))
+                .map(Entry::getValue)
+                .findFirst().orElse(defaultValue);
     }
 
     private void registerLiteralConvertor(String type, String template) {

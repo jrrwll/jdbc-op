@@ -44,7 +44,9 @@ public class SyncHandler extends BaseHandler {
 
     @ArgParserField({"n"})
     int batchSize = 1000;
+    @ArgParserField
     boolean columnQuota;
+    @ArgParserField(firstChar = true)
     boolean yes;
 
     @Override
@@ -120,10 +122,8 @@ public class SyncHandler extends BaseHandler {
             List<Map<String, Object>> rows, Map<String, JdbcColumnDef> columnMap,
             Connection targetConnection) {
         String insertIntoSql = dataSourceTo.getInsertIntoSql(rows, columnMap, targetDatabase, targetTable, columnQuota);
-        if (verbose) {
-            log.info("{}", insertIntoSql);
-        }
         if (!yes) {
+            log.info("{}", insertIntoSql);
             return;
         }
         try (Statement statement = targetConnection.createStatement()) {
