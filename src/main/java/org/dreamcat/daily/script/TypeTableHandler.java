@@ -121,7 +121,7 @@ public class TypeTableHandler extends BaseHandler {
         int rowNum = totalCount;
         while (rowNum > batchSize) {
             rowNum -= batchSize;
-            insertList.add();
+            // insertList.add();
         }
 
         sqlList.addAll(createTableSql);
