@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.common.Pair;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.util.ListUtil;
-import org.dreamcat.daily.script.ability.DataSourceAbility;
+import org.dreamcat.daily.script.ability.DataSourceTextTypeAbility;
 import org.dreamcat.daily.script.ability.DdlSqlAbility;
 import org.dreamcat.daily.script.ability.JdbcAbility;
 import org.dreamcat.daily.script.ability.OutputAbility;
@@ -22,7 +22,7 @@ public abstract class BaseImportHandler extends BaseHandler {
     @ArgParserField(nested = true)
     protected JdbcAbility jdbcAbility;
     @ArgParserField(nested = true)
-    protected DataSourceAbility dataSourceAbility;
+    protected DataSourceTextTypeAbility dataSourceAbility;
     @ArgParserField(nested = true)
     protected OutputAbility outputAbility;
 

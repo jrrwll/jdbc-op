@@ -47,6 +47,10 @@ dependencies {
 
     implementation libs.common.excel
     implementation libs.jsqlparser
+
+    runtimeOnly 'mysql:mysql-connector-java:8.0.29'
+    runtimeOnly 'org.postgresql:postgresql:42.6.0'
+    runtimeOnly 'org.xerial:sqlite-jdbc:3.50.3.0'
 }
 
 jar {

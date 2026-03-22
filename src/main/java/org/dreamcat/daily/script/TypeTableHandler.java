@@ -3,21 +3,24 @@ package org.dreamcat.daily.script;
 import static org.dreamcat.common.util.RandomUtil.randi;
 import static org.dreamcat.common.util.RandomUtil.uuid32;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.common.MutableInt;
 import org.dreamcat.common.Pair;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
+import org.dreamcat.common.json.JsonUtil;
 import org.dreamcat.common.util.ListUtil;
 import org.dreamcat.common.util.MapUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.StringUtil;
-import org.dreamcat.daily.script.ability.DataSourceAbility;
+import org.dreamcat.daily.script.ability.DataSourceRandomGenAbility;
 import org.dreamcat.daily.script.ability.DdlSqlAbility;
 import org.dreamcat.daily.script.ability.JdbcAbility;
-import org.dreamcat.daily.script.ability.RandomGenerateAbility;
+import org.dreamcat.daily.script.ability.OutputAbility;
 import org.dreamcat.daily.script.base.BaseHandler;
 import org.dreamcat.daily.script.common.AbortException;
+import org.dreamcat.daily.script.common.ColumnTypeUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,17 +44,19 @@ public class TypeTableHandler extends BaseHandler {
     private List<String> types;
     @ArgParserField("P")
     private List<String> partitionTypes;
+    @ArgParserField("pv")
+    private String partitionValues;
     @ArgParserField("c")
     private List<String> columns;
 
     @ArgParserField(nested = true)
-    DataSourceAbility dataSourceAbility;
+    DataSourceRandomGenAbility dataSourceAbility;
     @ArgParserField(nested = true)
     JdbcAbility jdbcAbility;
     @ArgParserField(nested = true)
     DdlSqlAbility ddlSqlAbility;
     @ArgParserField(nested = true)
-    RandomGenerateAbility randomGenerateAbility;
+    OutputAbility outputAbility;
 
     @ArgParserField
     boolean compact;
@@ -64,22 +69,43 @@ public class TypeTableHandler extends BaseHandler {
     @ArgParserField(firstChar = true)
     boolean yes;
 
+    transient String database;
+    transient List<List<Object>> partitionValueList;
+
     @Override
     public void run() throws Exception {
-        dataSourceAbility.init();
-        randomGenerateAbility.init(dataSourceAbility);
+        init();
 
         handle();
     }
 
-    private void init() {
+    private void init() throws Exception {
+        dataSourceAbility.init();
+
+        String[] dbTable = tableName.split(",", 2);
+        if (dbTable.length == 2) {
+            database = dbTable[0];
+            tableName = dbTable[1];
+        }
+
         if (ObjectUtil.isEmpty(types)) {
             types = dataSourceAbility.getAllTypes();
         }
         if (ObjectUtil.isEmpty(types)) {
             throw new AbortException("types cannot be empty, pass --types <type1> <type2> ... to specify it");
         }
-        if (partitionTypes == null) partitionTypes = Collections.emptyList();
+        if (partitionTypes == null) {
+            partitionTypes = Collections.emptyList();
+        } else {
+            if (ObjectUtil.isNotBlank(partitionValues)) {
+                try {
+                    partitionValueList = JsonUtil.fromJson(partitionValues, new TypeReference<List<List<Object>>>() {
+                    });
+                } catch (Exception e) {
+                    throw new AbortException("partitionValues is not a valid json 2d array: " + e.getMessage());
+                }
+            }
+        }
 
         if (ObjectUtil.isNotEmpty(columns)) {
             if (columns.size() != types.size() + partitionTypes.size()) {
@@ -121,12 +147,23 @@ public class TypeTableHandler extends BaseHandler {
         int rowNum = totalCount;
         while (rowNum > batchSize) {
             rowNum -= batchSize;
-            // insertList.add();
+
+            List<List<Object>> rows = dataSourceAbility.generateValues(
+                    columnTypes, batchSize, partitionValueList);
+            String insertIntoSql = dataSourceAbility.getInsertIntoSql(
+                    rows, columnNames, columnTypes,
+                    database, tableName, columnQuota);
+            insertList.add(insertIntoSql);
         }
 
         sqlList.addAll(createTableSql);
         sqlList.addAll(insertList);
-        jdbcAbility.executeSql(sqlList, verbose, abort);
+
+        if (!yes) {
+            outputAbility.run(sqlList, verbose);
+        } else {
+            jdbcAbility.executeSql(sqlList, verbose, abort);
+        }
     }
 
     private Pair<List<String>, List<String>> getColumnNameAndTypes() {
@@ -139,7 +176,7 @@ public class TypeTableHandler extends BaseHandler {
 
         Map<String, Integer> typeCountMap = MapUtil.toCountMap(types);
         if (typeCountMap.values().stream().allMatch(i -> i == 1)) {
-            columnNames = types.stream().map(this::formatType)
+            columnNames = types.stream().map(ColumnTypeUtil::formatType)
                     .collect(Collectors.toList());
         } else {
             Map<String, MutableInt> seqMap = new HashMap<>();
@@ -161,7 +198,7 @@ public class TypeTableHandler extends BaseHandler {
     }
 
     private String formatDupName(String type, Map<String, Integer> countMap, Map<String, MutableInt> seqMap) {
-        String columnName = formatType(type);
+        String columnName = ColumnTypeUtil.formatType(type);
 
         if (countMap.getOrDefault(type, 1) == 1) {
             return columnName;
@@ -171,17 +208,5 @@ public class TypeTableHandler extends BaseHandler {
                 .incrAndGet();
         columnName += "_" + seq;
         return columnName;
-    }
-
-    private String formatType(String type) {
-        type = type.replaceAll("\\(\\d+\\)", "")
-                .replaceAll("\\(\\d+, *\\d+\\)", "")
-                .replace("(", "")
-                .replace(")", "")
-                .replaceAll(", *", "")
-                .replace(' ', '_')
-                .replace(',', '_')
-                .replace("(", "_");
-        return StringUtil.remove(type, ")'\"");
     }
 }

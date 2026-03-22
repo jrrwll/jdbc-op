@@ -11,36 +11,19 @@ import org.dreamcat.common.util.ObjectUtil;
  */
 @Slf4j
 @ArgParserType(allProperties = true)
-public class RandomGenerateAbility {
+public class DataSourceRandomGenAbility extends DataSourceAbility {
 
     public boolean enableNeg; // generate neg number for number types
     public double nullRatio = 0;
     public String rowNullRatio; // like this 'ratio,rows', example: 0.5,10
 
-    DataSourceAbility dataSourceAbility;
-
     transient RowNullRatioBasedGen rowNullRatioBasedGen;
-
-    public String generateLiteral(String typeName) {
-        Object value = dataSourceAbility.valueGenerator.generate(typeName);
-        return dataSourceAbility.literalConvertor.convertAsLiteral(value, typeName);
-    }
-
-    public String nullLiteral() {
-        return dataSourceAbility.literalConvertor.getNullLiteral();
-    }
 
     // ---- ---- ---- ----    ---- ---- ---- ----    ---- ---- ---- ----
 
-    public void reset(int columns) {
-        if (rowNullRatioBasedGen != null) {
-            rowNullRatioBasedGen.reset(columns);
-        }
-    }
-
-    public void init(DataSourceAbility dataSourceAbility) throws Exception {
-        this.dataSourceAbility = dataSourceAbility;
-        dataSourceAbility.valueGenerator.setEnableNeg(enableNeg);
+    public void init() throws Exception {
+        super.init();
+        valueGenerator.setEnableNeg(enableNeg);
 
         // row null ratio
         if (ObjectUtil.isNotBlank(rowNullRatio)) {
@@ -54,17 +37,17 @@ public class RandomGenerateAbility {
             this.rowNullRatioBasedGen = new RowNullRatioBasedGen(ratio, rows);
         }
 
-        dataSourceAbility.literalConvertor.setGlobalConvertor(this::convert);
+        literalConvertor.setGlobalConvertor(this::convert);
     }
 
     private String convert(String literal, String typeName) {
         if (nullRatio < 1 && nullRatio > 0) {
             if (Math.random() <= nullRatio) {
-                return dataSourceAbility.literalConvertor.getNullLiteral();
+                return literalConvertor.getNullLiteral();
             }
         }
         if (rowNullRatioBasedGen != null && rowNullRatioBasedGen.generate()) {
-            return dataSourceAbility.literalConvertor.getNullLiteral();
+            return literalConvertor.getNullLiteral();
         }
         return null;
     }

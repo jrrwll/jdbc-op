@@ -19,6 +19,7 @@ import org.dreamcat.common.text.TextValueType;
 import org.dreamcat.common.util.FunctionUtil;
 import org.dreamcat.common.util.MapUtil;
 import org.dreamcat.common.util.ObjectUtil;
+import org.dreamcat.common.util.RandomUtil;
 import org.dreamcat.common.util.StringUtil;
 import org.dreamcat.daily.script.model.DataSourceInfos;
 
@@ -34,22 +35,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * @author Jerry Will
  * @version 2023-08-14
  */
 @Slf4j
-@ArgParserType(allProperties = true)
 public class DataSourceAbility {
 
     @ArgParserField("S")
     public String dataSourceType;
+    @ArgParserField
     public Set<String> converters; // binary:cast($value as $type)
-    public String textTypes; // json, type like: Map<TextValueType, String>
 
     transient String databaseSchemaSql;
     transient String tableSchemaSql;
@@ -57,7 +59,6 @@ public class DataSourceAbility {
     transient String columnCommentSql;
     transient boolean doubleQuota; // "c1" or `c2`
 
-    transient EnumMap<TextValueType, String> textValueTypeMapping;
     @Getter
     transient List<String> allTypes;
 
@@ -181,7 +182,8 @@ public class DataSourceAbility {
         String columnNameSql = getColumnNameSql(columnNames, columnQuota);
         String insertIntoSql = String.format(
                 "insert into %s(%s)%s values ", databasePrefix + table, partitionSql, columnNameSql);
-        return insertIntoSql + generateValues(rows, columnTypes) + ";";
+        String valuesSql = literalConvertor.generateValues(rows, columnTypes);
+        return insertIntoSql + valuesSql + ";";
     }
 
     private Triple<List<String>, List<String>, String> splitPartitions(
@@ -227,20 +229,24 @@ public class DataSourceAbility {
         return StringUtil.escape(columnName, doubleQuota ? "\"" : "`");
     }
 
-    public List<String> detectColumnTypes(List<Object> values) {
-        return values.stream().map(this::detectColumnType).collect(Collectors.toList());
-    }
-
-    public String detectColumnType(Object value) {
-        if (ObjectUtil.isEmpty(textValueTypeMapping)) return null;
-        TextValueType textValueType = TextValueType.detectObject(value);
-        return textValueTypeMapping.get(textValueType);
-    }
-
     // ---- ---- ---- ----    ---- ---- ---- ----    ---- ---- ---- ----
 
-    public String generateValues(List<List<Object>> rows, List<String> typeNames) {
-        return literalConvertor.generateValues(rows, typeNames);
+    public List<List<Object>> generateValues(
+            List<String> columnTypes, int rows,
+            List<List<Object>> partitionValueList) {
+        int columnCount = columnTypes.size();
+        int partitionColumnCount = ObjectUtil.isEmpty(partitionValueList) ? 0 : partitionValueList.size();
+        int noPartitionColumnCount = columnCount - partitionColumnCount;
+        return IntStream.range(0, rows).mapToObj(k -> {
+            List<Object> row = new ArrayList<>(columnCount);
+            for (int i = 0; i < noPartitionColumnCount; i++) {
+                row.add(valueGenerator.generate(columnTypes.get(i)));
+            }
+            for (int i = 0; i < partitionColumnCount; i++) {
+                row.add(RandomUtil.chooseOne(partitionValueList.get(i)));
+            }
+            return row;
+        }).collect(Collectors.toList());
     }
 
     // ==== ==== ==== ====    ==== ==== ==== ====    ==== ==== ==== ====
@@ -307,22 +313,6 @@ public class DataSourceAbility {
 
         doubleQuota = infos.getDoubleQuota().contains(dataSourceType);
 
-        // text types
-        Map<String, Map<String, String>> textTypeMaps = YamlUtil.fromJson(
-                getResourceAsString("datasource-text-types.yaml"),
-                new TypeReference<Map<String, Map<String, String>>>() {
-                });
-        textValueTypeMapping = new EnumMap<>(TextValueType.class);
-        Map<String, String> textTypeMap = getByDatasourceType(textTypeMaps, Collections.emptyMap());
-        if (ObjectUtil.isNotEmpty(textTypes)) {
-            Map<String, String> customTextTypeMap = JsonUtil.fromJsonObject(textTypes, String.class);
-            textTypeMap = new HashMap<>(textTypeMap);
-            textTypeMap.putAll(customTextTypeMap);
-        }
-        for (Entry<String, String> entry : textTypeMap.entrySet()) {
-            textValueTypeMapping.put(TextValueType.valueOf(entry.getKey().toUpperCase()), entry.getValue());
-        }
-
         // all-types
         Map<String, List<String>> allTypeMaps = YamlUtil.fromJson(
                 getResourceAsString("datasource-all-types.yaml"),
@@ -331,7 +321,7 @@ public class DataSourceAbility {
         allTypes = getByDatasourceType(allTypeMaps, Collections.emptyList());
     }
 
-    private <T> T getByDatasourceType(Map<String, T> map, T defaultValue) {
+    protected <T> T getByDatasourceType(Map<String, T> map, T defaultValue) {
         return map.entrySet().stream()
                 .filter(e -> Arrays.asList(e.getKey().split(",")).contains(dataSourceType))
                 .map(Entry::getValue)

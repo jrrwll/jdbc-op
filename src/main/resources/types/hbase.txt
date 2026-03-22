@@ -1,0 +1,12 @@
+boolean
+byte
+short
+int
+long
+float
+double
+decimal
+timestamp
+date
+string
+binary

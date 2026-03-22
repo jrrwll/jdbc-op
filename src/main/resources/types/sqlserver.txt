@@ -1,0 +1,20 @@
+bigint
+int
+decimal(%d, %d)
+numeric
+bit
+smallint
+tinyint
+money
+smallmoney
+float
+real
+date
+datetime
+char(%d)
+varchar(%d)
+nchar(%d)
+nvarchar(%d)
+binary
+varbinary(%d)
+sysname

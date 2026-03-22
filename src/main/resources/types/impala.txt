@@ -1,0 +1,12 @@
+bigint
+boolean
+char(%d)
+decimal(%d, %d)
+double
+float
+int
+smallint
+string
+timestamp
+tinyint
+varchar(%d)
