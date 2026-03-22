@@ -1,60 +1,75 @@
-allprojects {
-    repositories {
-        mavenLocal()
-        mavenCentral()
-        maven { url = 'https://central.sonatype.com/repository/maven-snapshots/' }
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url = 'https://central.sonatype.com/repository/maven-snapshots/' }
+}
+
+apply plugin: 'java-library'
+
+compileJava.options.encoding = 'UTF-8'
+compileTestJava.options.encoding = 'UTF-8'
+java.sourceCompatibility = JavaVersion.VERSION_1_8
+
+version = '0.1'
+group = 'org.dreamcat.daily.script'
+
+configurations {
+    jdbcDriver
+    jdbcDriverRuntimeClasspath {
+        extendsFrom runtimeClasspath, jdbcDriver
     }
-
-    apply plugin: 'java-library'
-
-    compileJava.options.encoding = 'UTF-8'
-    compileTestJava.options.encoding = 'UTF-8'
-    java.sourceCompatibility = JavaVersion.VERSION_1_8
-
-    version = '0.1'
-    group = 'org.dreamcat.daily.script'
-
-    dependencies {
-        compileOnly libs.lombok
-        annotationProcessor libs.lombok
-        testCompileOnly libs.lombok
-        testAnnotationProcessor libs.lombok
-        testImplementation libs.jupiter.api
-        testRuntimeOnly libs.jupiter.engine
-        testRuntimeOnly libs.junit.platform.launcher
-        implementation libs.slf4j.api
-
-        implementation libs.common
-    }
-
-    tasks.register('printVersion') {
-        doLast {
-            print version
-        }
-    }
-
-    test {
-        useJUnitPlatform()
-    }
-
-    apply from: new File(rootDir, 'gradle/tasks-jar.gradle')
 }
 
 dependencies {
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
+    testCompileOnly libs.lombok
+    testAnnotationProcessor libs.lombok
+    testImplementation libs.jupiter.api
+    testRuntimeOnly libs.jupiter.engine
+    testRuntimeOnly libs.junit.platform.launcher
+    implementation libs.slf4j.api
+
+    implementation libs.common
     implementation libs.bundles.log4j2
     implementation libs.bundles.jackson
     implementation libs.jackson.yaml
-
     implementation libs.common.excel
     implementation libs.jsqlparser
 
-    runtimeOnly 'mysql:mysql-connector-java:8.0.29'
-    runtimeOnly 'org.postgresql:postgresql:42.6.0'
-    runtimeOnly 'org.xerial:sqlite-jdbc:3.50.3.0'
+    jdbcDriver 'mysql:mysql-connector-java:8.0.29'
+    jdbcDriver 'org.postgresql:postgresql:42.6.0'
+    jdbcDriver 'org.xerial:sqlite-jdbc:3.50.3.0'
 }
 
 jar {
     manifest {
         attributes "Main-Class": "org.dreamcat.daily.script.Main"
     }
+}
+
+tasks.register('printVersion') {
+    doLast {
+        print version
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+apply from: new File(rootDir, 'gradle/tasks-jar.gradle')
+
+tasks.register('driverJar', Jar) {
+    group = 'build'
+    description = 'Build a fat jar with all dependencies and all drivers'
+    archiveClassifier = "all-with-drivers"
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.MF'
+
+    manifest.from jar.manifest
+    from {
+        configurations.jdbcDriverRuntimeClasspath.findAll { it.name.endsWith('.jar') }.collect { zipTree(it) }
+    }
+    with jar
 }
