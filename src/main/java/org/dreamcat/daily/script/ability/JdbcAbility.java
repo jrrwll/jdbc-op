@@ -67,9 +67,13 @@ public class JdbcAbility {
 
     public void executeSql(List<String> sqlList, boolean verbose, boolean abort) throws Exception {
         run(connection -> {
-            log.info("start to execute sql, total {}", sqlList.size());
+            int cnt = 0, total = sqlList.size();
+            log.info("start to execute sql, total {}", total);
             long cost = System.currentTimeMillis();
             for (String sql : sqlList) {
+                cnt += 1;
+                log.info("start to execute sql, progress {}/{}", cnt, total);
+
                 if (verbose) {
                     log.info("{}", sql);
                 }

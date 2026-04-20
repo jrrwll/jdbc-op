@@ -1,3 +1,10 @@
+plugins {
+    id 'java-library'
+    // https://central.sonatype.com/artifact/org.graalvm.buildtools/native-gradle-plugin
+    // id 'org.graalvm.buildtools.native' version '1.0.0'
+    id 'org.graalvm.buildtools.native' version '0.11.5'
+}
+
 repositories {
     mavenLocal()
     mavenCentral()
@@ -34,6 +41,8 @@ dependencies {
     implementation libs.bundles.log4j2
     implementation libs.bundles.jackson
     implementation libs.jackson.yaml
+    implementation libs.jackson.datatype.jsr310
+
     implementation libs.common.excel
     implementation libs.jsqlparser
 
@@ -72,4 +81,10 @@ tasks.register('driverJar', Jar) {
         configurations.jdbcDriverRuntimeClasspath.findAll { it.name.endsWith('.jar') }.collect { zipTree(it) }
     }
     with jar
+}
+
+apply from: new File(rootDir, 'gradle/native-image.gradle')
+
+tasks.named("nativeCompile") {
+    classpath.from(configurations.jdbcDriver)
 }

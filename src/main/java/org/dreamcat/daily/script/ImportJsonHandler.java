@@ -57,14 +57,19 @@ public class ImportJsonHandler extends BaseImportHandler.SingleTable {
         List<List<Object>> rowList = rows.stream()
                 .map(row -> (List<Object>) new ArrayList(row.values()))
                 .collect(Collectors.toList());
+        log.info("json parsed, columnNames={}, total {} columns and {} rows",
+                columnNames, columnNames.size(), rowList.size());
         return Pair.of(columnNames, rowList);
     }
 
     private List<Map<String, Object>> readJsonLine() throws Exception {
         List<Map<String, Object>> rows = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            Map<String, Object> row = JsonUtil.fromJsonObject(reader.readLine());
-            rows.add(row);
+            String line;
+            while((line = reader.readLine()) != null) {
+                Map<String, Object> row = JsonUtil.fromJsonObject(line);
+                rows.add(row);
+            }
         }
         return rows;
     }

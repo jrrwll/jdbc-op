@@ -1,0 +1,54 @@
+sourceSets {
+    main {
+        resources {
+            srcDir 'src/main/resources'
+            srcDir 'src/aot/resources'
+        }
+    }
+}
+
+// skip copy to build/resources/native
+processResources {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+def nativeImageAgentFilter = new File(rootDir, 'src/aot/agent-filter.json')
+test {
+    jvmArgs "-agentlib:native-image-agent=config-merge-dir=src/aot/resources/META-INF/native-image,access-filter-file=${nativeImageAgentFilter}"
+
+    useJUnitPlatform {
+        excludeTags 'slow', 'integration'
+    }
+}
+
+/*
+./gradlew :test --info && ./gradlew :nativeCompile
+./gradlew :nativeCompile -Pprod
+*/
+graalvmNative {
+    metadataRepository {
+        enabled = true
+    }
+
+    binaries {
+        main {
+            imageName = 'jdbc-op'
+            mainClass = 'org.dreamcat.daily.script.Main'
+            sharedLibrary = false
+
+            if (project.hasProperty('prod')) {
+                buildArgs.addAll([
+                        '--no-fallback',
+                        '-O3', // highest optimization
+                        '--strip-debug',
+                        '-H:+StaticExecutableWithDynamicLibC'
+                ])
+            } else {
+                buildArgs.addAll([
+                        '--no-fallback',
+                        '-Ob', // lowest optimization
+                ])
+            }
+        }
+    }
+}

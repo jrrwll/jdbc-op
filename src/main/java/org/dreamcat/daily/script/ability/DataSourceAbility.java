@@ -140,7 +140,7 @@ public class DataSourceAbility {
         try (Statement statement = connection.createStatement()) {
             try (ResultSet rs = statement.executeQuery(sql)) {
                 JdbcUtil.getRows(rs, batchSize, rows -> {
-                    log.info("handling {} kiuhygbrows on {}.{}",
+                    log.info("handling {} rows on {}.{}",
                             rows.size(), database, table);
                     if (!rows.isEmpty()) {
                         handler.accept(rows);
@@ -181,7 +181,7 @@ public class DataSourceAbility {
 
         String columnNameSql = getColumnNameSql(columnNames, columnQuota);
         String insertIntoSql = String.format(
-                "insert into %s(%s)%s values ", databasePrefix + table, partitionSql, columnNameSql);
+                "insert into %s(%s)%s values ", databasePrefix + table, columnNameSql, partitionSql);
         String valuesSql = literalConvertor.generateValues(rows, columnTypes);
         return insertIntoSql + valuesSql + ";";
     }
