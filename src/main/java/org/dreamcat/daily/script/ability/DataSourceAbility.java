@@ -136,12 +136,22 @@ public class DataSourceAbility {
                 database == null ? select_without_database_sql : select_sql,
                 "database", database, "db", database,
                 "table", table, "tb", table);
+        getRows(connection, sql, batchSize, handler,
+                database == null ? table : database + "." + table);
+    }
+
+    public void getRows(Connection connection, String sql, int batchSize,
+            Consumer<List<Map<String, Object>>> handler) throws SQLException {
+        getRows(connection, sql, batchSize, handler, "sql");
+    }
+
+    private void getRows(Connection connection, String sql, int batchSize,
+            Consumer<List<Map<String, Object>>> handler, String tag) throws SQLException {
         log.info("getRows: {}", sql);
         try (Statement statement = connection.createStatement()) {
             try (ResultSet rs = statement.executeQuery(sql)) {
                 JdbcUtil.getRows(rs, batchSize, rows -> {
-                    log.info("handling {} rows on {}.{}",
-                            rows.size(), database, table);
+                    log.info("handling {} rows on {}", rows.size(), tag);
                     if (!rows.isEmpty()) {
                         handler.accept(rows);
                     }

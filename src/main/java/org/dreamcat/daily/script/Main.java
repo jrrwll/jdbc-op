@@ -13,10 +13,8 @@ import org.dreamcat.daily.script.base.BaseHandler;
         subcommands = {
                 SyncHandler.class,
                 // export
-                ExportCsvHandler.class,
-                ExportExcelHandler.class,
+                ExportHandler.class,
                 ExportSqlHandler.class,
-                ExportJsonHandler.class,
                 // import
                 ImportCsvHandler.class,
                 ImportExcelHandler.class,

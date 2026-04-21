@@ -32,6 +32,8 @@ graalvmNative {
 
     binaries {
         main {
+            classpath.from(configurations.jdbcDriver)
+
             imageName = 'jdbc-op'
             mainClass = 'org.dreamcat.daily.script.Main'
             sharedLibrary = false

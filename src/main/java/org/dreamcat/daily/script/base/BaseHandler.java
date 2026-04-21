@@ -7,7 +7,9 @@ import org.dreamcat.common.argparse.ArgParserEntrypoint;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.CommandArgParser;
 import org.dreamcat.common.argparse.CommandHelpInfo;
+import org.dreamcat.common.json.JsonUtil;
 import org.dreamcat.common.json.YamlUtil;
+import org.dreamcat.common.util.BeanUtil;
 import org.dreamcat.daily.script.common.AbortException;
 
 import java.io.IOException;
@@ -29,9 +31,12 @@ public abstract class BaseHandler implements ArgParserEntrypoint {
     @ArgParserField(firstChar = true)
     private boolean help;
 
+    static final boolean debug = "1".equals(System.getenv("DEBUG"));
+
     public static void run(Class<? extends BaseHandler> clazz, String[] args) {
-        if ("1".equals(System.getenv("DEBUG"))) {
-            System.out.println("args:\n" + Arrays.toString(args));
+        if (debug) {
+            System.out.println("passed args:\n==== ==== ==== ====\n" +
+                    JsonUtil.toJsonWithPretty(args) + "\n==== ==== ==== ====");
         }
         CommandArgParser argParser = new CommandArgParser(clazz);
         // help info
@@ -49,6 +54,10 @@ public abstract class BaseHandler implements ArgParserEntrypoint {
     @SneakyThrows
     @Override
     public final void run(ArgParserContext context) {
+        if (debug) {
+            System.out.println(getClass().getSimpleName() + ":\n" +
+                    JsonUtil.toJsonWithPretty(BeanUtil.toMap(this)));
+        }
         if (help) {
             System.out.println(context.getHelp());
             return;

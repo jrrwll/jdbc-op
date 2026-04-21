@@ -84,7 +84,3 @@ tasks.register('driverJar', Jar) {
 }
 
 apply from: new File(rootDir, 'gradle/native-image.gradle')
-
-tasks.named("nativeCompile") {
-    classpath.from(configurations.jdbcDriver)
-}

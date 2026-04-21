@@ -3,7 +3,7 @@ package org.dreamcat.daily.script.ability;
 import static org.dreamcat.common.util.ClassLoaderUtil.getResourceAsString;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.dreamcat.common.argparse.ArgParserType;
+import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.json.JsonUtil;
 import org.dreamcat.common.json.YamlUtil;
 import org.dreamcat.common.text.TextValueType;
@@ -21,9 +21,9 @@ import java.util.stream.Collectors;
  * @author Jerry Will
  * @version 2026-03-21
  */
-@ArgParserType(allProperties = true)
 public class DataSourceTextTypeAbility extends DataSourceAbility {
 
+    @ArgParserField("TT")
     private String textTypes; // json, type like: Map<TextValueType, String>
 
     transient EnumMap<TextValueType, String> textValueTypeMapping;
