@@ -1,0 +1,180 @@
+name: Build Native Binaries
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-native:
+    name: Build Native - ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux-amd64
+            artifact_name: jdbc-op_linux_amd64
+            native_dir: build/native/nativeCompile
+            binary_name: jdbc-op
+          - os: ubuntu-24.04-arm
+            platform: linux-aarch64
+            artifact_name: jdbc-op_linux_aarch64
+            native_dir: build/native/nativeCompile
+            binary_name: jdbc-op
+          - os: macos-13
+            platform: macos-amd64
+            artifact_name: jdbc-op_macos_amd64
+            native_dir: build/native/nativeCompile
+            binary_name: jdbc-op
+          - os: macos-latest
+            platform: macos-aarch64
+            artifact_name: jdbc-op_macos_aarch64
+            native_dir: build/native/nativeCompile
+            binary_name: jdbc-op
+          - os: windows-latest
+            platform: windows-amd64
+            artifact_name: jdbc-op_windows_amd64
+            native_dir: build/native/nativeCompile
+            binary_name: jdbc-op.exe
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
+        with:
+          gradle-version: '8.8'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+        if: runner.os != 'Windows'
+
+      - name: Test with Gradle
+        run: gradle :test --info --stacktrace
+
+      - name: Native Compile with Gradle
+        run: gradle :nativeCompile --info --stacktrace
+
+      - name: Package artifacts
+        shell: bash
+        run: |
+          mkdir -p dist
+
+          if [ -d "${{ matrix.native_dir }}" ]; then
+            echo "Copying files from ${{ matrix.native_dir }}"
+            cp -r ${{ matrix.native_dir }}/* dist/ 2>/dev/null || true
+          fi
+
+          find build -type f -executable -exec cp {} dist/ \; 2>/dev/null || true
+          find build -name "*.exe" -exec cp {} dist/ \; 2>/dev/null || true
+          find build -name "*.dll" -exec cp {} dist/ \; 2>/dev/null || true
+          find build -name "*.so" -exec cp {} dist/ \; 2>/dev/null || true
+          find build -name "*.dylib" -exec cp {} dist/ \; 2>/dev/null || true
+
+          echo "Packaged files:"
+          ls -la dist/
+
+      - name: Upload platform artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: dist/
+          retention-days: 30
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    needs: build-native
+    if: success() && startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract tag commit message
+        id: tag_message
+        shell: bash
+        run: |
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
+
+          # Prefer annotated tag message, fall back to the tagged commit message
+          RAW_MSG=$(git tag -l --format='%(contents)' "$TAG_NAME")
+          if [ -z "$(echo "$RAW_MSG" | tr -d '[:space:]')" ]; then
+            RAW_MSG=$(git log -1 --pretty=%B "$TAG_NAME")
+          fi
+
+          {
+            echo "body<<__EOF__"
+            echo "$RAW_MSG"
+            echo "__EOF__"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Prepare release assets
+        shell: bash
+        run: |
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          mkdir -p final-release
+
+          declare -A PLATFORM_MAP=(
+            ["jdbc-op_linux_amd64"]="linux-amd64"
+            ["jdbc-op_linux_aarch64"]="linux-aarch64"
+            ["jdbc-op_macos_amd64"]="macos-amd64"
+            ["jdbc-op_macos_aarch64"]="macos-aarch64"
+            ["jdbc-op_windows_amd64"]="windows-amd64"
+          )
+
+          for artifact in "${!PLATFORM_MAP[@]}"; do
+            platform="${PLATFORM_MAP[$artifact]}"
+            src="release-artifacts/$artifact"
+            if [ -d "$src" ]; then
+              stage="final-release/stage-$platform"
+              mkdir -p "$stage"
+              cp -r "$src"/* "$stage/" 2>/dev/null || true
+
+              # Ensure binary is executable for non-Windows
+              if [[ "$platform" != windows-* ]]; then
+                if [ -f "$stage/jdbc-op" ]; then
+                  chmod +x "$stage/jdbc-op"
+                fi
+              fi
+
+              pkg_name="jdbc-op-${TAG_NAME}-${platform}.tar.gz"
+              tar -czf "final-release/$pkg_name" -C "$stage" .
+              rm -rf "$stage"
+              echo "Created final-release/$pkg_name"
+            else
+              echo "WARN: missing artifact dir $src"
+            fi
+          done
+
+          echo "Final release assets:"
+          find final-release -type f -print
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: final-release/*.tar.gz
+          body: ${{ steps.tag_message.outputs.body }}
+          draft: false
+          prerelease: ${{ contains(github.ref, '-alpha') || contains(github.ref, '-beta') || contains(github.ref, '-rc') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
