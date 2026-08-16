@@ -44,12 +44,6 @@ public class ImportExcelHandler extends BaseImportHandler {
 
     @Override
     public void run() throws Exception {
-        init();
-
-        handle();
-    }
-
-    private void handle() throws Exception {
         Map<String, List<List<Object>>> sheets = ExcelUtil.parseAsMap(new File(file));
         int sheetIndex = 0;
         for (Entry<String, List<List<Object>>> entry : sheets.entrySet()) {

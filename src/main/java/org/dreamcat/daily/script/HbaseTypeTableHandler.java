@@ -16,7 +16,8 @@ import java.util.stream.Collectors;
  * @version 2023-05-29
  */
 @ArgParserType(command = "hbase-type-table")
-public class HbaseTypeTableHandler extends BaseHandler {
+public class
+HbaseTypeTableHandler extends BaseHandler {
 
     @ArgParserField(position = 1)
     private String tableName = "t_" + StringUtil.reverse(uuid32()).substring(0, 8);

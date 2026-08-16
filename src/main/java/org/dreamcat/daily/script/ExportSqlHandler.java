@@ -6,6 +6,7 @@ import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.io.FileUtil;
 import org.dreamcat.common.sql.JdbcColumnDef;
+import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.daily.script.ability.DataSourceTextTypeAbility;
 import org.dreamcat.daily.script.base.BaseExportHandler;
 
@@ -33,6 +34,18 @@ public class ExportSqlHandler extends BaseExportHandler {
     String outputTable = "table_name";
     @ArgParserField
     boolean columnQuota;
+
+    @Override
+    public void init() throws Exception {
+        dataSourceAbility.init();
+
+        if (ObjectUtil.isEmpty(sql)) {
+            if (verbose) {
+                log.info("--sql is empty, will export by `dbTables` args");
+            }
+            dbTablesAbility.init(dataSourceAbility, this);
+        }
+    }
 
     @Override
     public void exportTable(Connection connection, String database, String table) throws Exception {

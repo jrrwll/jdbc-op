@@ -46,13 +46,7 @@ public class InsertRandomHandler extends BaseHandler {
     transient String database;
 
     @Override
-    public void run() throws Exception {
-        init();
-
-        handle();
-    }
-
-    private void init() throws Exception {
+    public void init() throws Exception {
         if (ObjectUtil.isBlank(tableName)) {
             throw new AbortException("table name is required");
         }
@@ -66,7 +60,8 @@ public class InsertRandomHandler extends BaseHandler {
         }
     }
 
-    private void handle() throws Exception {
+    @Override
+    public void run() throws Exception {
         List<String> columnNames = new ArrayList<>();
         List<String> columnTypes = new ArrayList<>();
         jdbcAbility.run(connection -> {

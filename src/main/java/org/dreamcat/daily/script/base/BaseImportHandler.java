@@ -90,8 +90,6 @@ public abstract class BaseImportHandler extends BaseHandler {
 
         @Override
         public void run() throws Exception {
-            init();
-
             Pair<List<String>, List<List<Object>>> pair = readAllRows();
             log.info("start to import, total {}", pair.first().size());
             long cost = System.currentTimeMillis();

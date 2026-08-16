@@ -49,6 +49,9 @@ public abstract class BaseHandler implements ArgParserEntrypoint {
         argParser.run(args);
     }
 
+    public void init() throws Exception {
+    }
+
     public abstract void run() throws Exception;
 
     @SneakyThrows
@@ -64,6 +67,7 @@ public abstract class BaseHandler implements ArgParserEntrypoint {
         }
 
         try {
+            this.init();
             this.run();
         } catch (Exception e) {
             if (e instanceof AbortException) {

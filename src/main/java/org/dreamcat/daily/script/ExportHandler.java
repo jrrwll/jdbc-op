@@ -3,10 +3,10 @@ package org.dreamcat.daily.script;
 import static org.dreamcat.common.util.ExceptionUtil.getRootCauseMessage;
 
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
+import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.daily.script.ability.DataSourceAbility;
 import org.dreamcat.daily.script.ability.ExportAbility;
 import org.dreamcat.daily.script.base.BaseExportHandler;
@@ -30,6 +30,19 @@ public class ExportHandler extends BaseExportHandler {
     DataSourceAbility dataSourceAbility;
     @ArgParserField(nested = true)
     ExportAbility exportAbility;
+
+    @Override
+    public void init() throws Exception {
+        dataSourceAbility.init();
+        exportAbility.init();
+
+        if (ObjectUtil.isEmpty(sql)) {
+            if (verbose) {
+                log.info("--sql is empty, will export by `dbTables` args");
+            }
+            dbTablesAbility.init(dataSourceAbility, this);
+        }
+    }
 
     @Override
     public void exportTable(Connection connection, String database, String table) throws Exception {

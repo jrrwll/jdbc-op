@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.common.Pair;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.util.ObjectUtil;
-import org.dreamcat.daily.script.ability.DataSourceAbility;
 import org.dreamcat.daily.script.ability.DbTablesAbility;
 import org.dreamcat.daily.script.ability.JdbcAbility;
 
@@ -38,8 +37,6 @@ public abstract class BaseExportHandler extends BaseHandler {
     @ArgParserField({"n"})
     protected int batchSize = 1000;
 
-    protected abstract DataSourceAbility getDataSourceAbility();
-
     protected abstract void exportTable(Connection connection,
             String database, String table) throws Exception;
 
@@ -48,14 +45,6 @@ public abstract class BaseExportHandler extends BaseHandler {
 
     @Override
     public void run() throws Exception {
-        getDataSourceAbility().init();
-        if (ObjectUtil.isEmpty(sql)) {
-            if (verbose) {
-                log.info("--sql is empty, will export by `dbTables` args");
-            }
-            dbTablesAbility.init(getDataSourceAbility(), this);
-        }
-
         jdbcAbility.run(this::handle, verbose);
     }
 

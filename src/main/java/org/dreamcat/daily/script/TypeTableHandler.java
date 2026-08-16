@@ -73,13 +73,7 @@ public class TypeTableHandler extends BaseHandler {
     transient List<List<Object>> partitionValueList;
 
     @Override
-    public void run() throws Exception {
-        init();
-
-        handle();
-    }
-
-    private void init() throws Exception {
+    public void init() throws Exception {
         dataSourceAbility.init();
 
         String[] dbTable = tableName.split(",", 2);
@@ -122,7 +116,8 @@ public class TypeTableHandler extends BaseHandler {
         }
     }
 
-    private void handle() throws Exception {
+    @Override
+    public void run() throws Exception {
         List<String> columnNames, columnTypes;
         if (ObjectUtil.isNotEmpty(columns)) {
             columnNames = columns;

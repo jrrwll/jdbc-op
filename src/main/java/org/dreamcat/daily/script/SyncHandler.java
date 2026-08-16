@@ -50,13 +50,12 @@ public class SyncHandler extends BaseHandler {
     boolean yes;
 
     @Override
-    public void run() throws Exception {
+    public void init() throws Exception {
         dbTableMappingsAbility.init(dataSourceFrom, this);
-
-        handle();
     }
 
-    private void handle() throws Exception {
+    @Override
+    public void run() throws Exception {
         List<Quadruple<String, String, String, String>> dbTableMappings = new ArrayList<>();
         jdbcFrom.run(connection -> {
             dbTableMappings.addAll(dbTableMappingsAbility.mappingDbTables(connection));
