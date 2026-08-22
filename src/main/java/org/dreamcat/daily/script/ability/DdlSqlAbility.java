@@ -1,6 +1,7 @@
 package org.dreamcat.daily.script.ability;
 
 import lombok.extern.slf4j.Slf4j;
+import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.sql.JdbcColumnDef;
 import org.dreamcat.common.sql.JdbcUtil;
 import org.dreamcat.common.text.InterpolationUtil;
@@ -24,6 +25,7 @@ import java.util.Set;
  * @version 2026-03-07
  */
 @Slf4j
+@ArgParserType(allProperties = true)
 public class DdlSqlAbility {
 
     String preColumnDefSql;

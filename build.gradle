@@ -1,86 +1,71 @@
 plugins {
-    id 'java-library'
     // https://central.sonatype.com/artifact/org.graalvm.buildtools/native-gradle-plugin
     // id 'org.graalvm.buildtools.native' version '1.0.0'
-    id 'org.graalvm.buildtools.native' version '0.11.5'
+    id 'org.graalvm.buildtools.native' version '0.11.5' apply false
 }
 
-repositories {
-    mavenLocal()
-    mavenCentral()
-    maven { url = 'https://central.sonatype.com/repository/maven-snapshots/' }
-}
+allprojects {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven { url = 'https://central.sonatype.com/repository/maven-snapshots/' }
+    }
 
-apply plugin: 'java-library'
+    apply plugin: 'java-library'
 
-compileJava.options.encoding = 'UTF-8'
-compileTestJava.options.encoding = 'UTF-8'
-java.sourceCompatibility = JavaVersion.VERSION_1_8
+    java.sourceCompatibility = JavaVersion.VERSION_1_8
+    compileJava.options.encoding = 'UTF-8'
+    compileTestJava.options.encoding = 'UTF-8'
 
-version = '0.1'
-group = 'org.dreamcat.daily.script'
+    version = '0.1'
+    group = 'org.dreamcat.daily.script'
 
-configurations {
-    jdbcDriver
-    jdbcDriverRuntimeClasspath {
-        extendsFrom runtimeClasspath, jdbcDriver
+    dependencies {
+        compileOnly libs.lombok
+        annotationProcessor libs.lombok
+        testCompileOnly libs.lombok
+        testAnnotationProcessor libs.lombok
+        testImplementation libs.jupiter.api
+        testRuntimeOnly libs.jupiter.engine
+        testRuntimeOnly libs.junit.platform.launcher
+        implementation libs.slf4j.api
+
+        implementation libs.common
+        implementation libs.bundles.log4j2
+        implementation libs.bundles.jackson
+        implementation libs.jackson.yaml
+        implementation libs.jackson.datatype.jsr310
+
+        implementation libs.common.excel
+        implementation libs.jsqlparser
+    }
+
+    jar {
+        manifest {
+            attributes "Main-Class": "org.dreamcat.daily.script.Main"
+        }
+    }
+
+    tasks.register('printVersion') {
+        doLast {
+            print version
+        }
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+
+    apply from: new File(rootDir, 'gradle/tasks-jar.gradle')
+
+    createConfigurationAndJarTask('driverJar', 'all-with-drivers', 'Build a fat jar with all dependencies and all drivers', configurations.runtimeClasspath)
+
+    dependencies {
+        // https://central.sonatype.com/artifact/mysql/mysql-connector-java
+        driverJar 'mysql:mysql-connector-java:8.0.33'
+        // https://central.sonatype.com/artifact/org.postgresql/postgresql
+        driverJar 'org.postgresql:postgresql:42.6.2'
+        // https://central.sonatype.com/artifact/org.xerial/sqlite-jdbc
+        driverJar 'org.xerial:sqlite-jdbc:3.50.3.0'
     }
 }
-
-dependencies {
-    compileOnly libs.lombok
-    annotationProcessor libs.lombok
-    testCompileOnly libs.lombok
-    testAnnotationProcessor libs.lombok
-    testImplementation libs.jupiter.api
-    testRuntimeOnly libs.jupiter.engine
-    testRuntimeOnly libs.junit.platform.launcher
-    implementation libs.slf4j.api
-
-    implementation libs.common
-    implementation libs.bundles.log4j2
-    implementation libs.bundles.jackson
-    implementation libs.jackson.yaml
-    implementation libs.jackson.datatype.jsr310
-
-    implementation libs.common.excel
-    implementation libs.jsqlparser
-
-    jdbcDriver 'mysql:mysql-connector-java:8.0.29'
-    jdbcDriver 'org.postgresql:postgresql:42.6.0'
-    jdbcDriver 'org.xerial:sqlite-jdbc:3.50.3.0'
-}
-
-jar {
-    manifest {
-        attributes "Main-Class": "org.dreamcat.daily.script.Main"
-    }
-}
-
-tasks.register('printVersion') {
-    doLast {
-        print version
-    }
-}
-
-test {
-    useJUnitPlatform()
-}
-
-apply from: new File(rootDir, 'gradle/tasks-jar.gradle')
-
-tasks.register('driverJar', Jar) {
-    group = 'build'
-    description = 'Build a fat jar with all dependencies and all drivers'
-    archiveClassifier = "all-with-drivers"
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.MF'
-
-    manifest.from jar.manifest
-    from {
-        configurations.jdbcDriverRuntimeClasspath.findAll { it.name.endsWith('.jar') }.collect { zipTree(it) }
-    }
-    with jar
-}
-
-apply from: new File(rootDir, 'gradle/native-image.gradle')

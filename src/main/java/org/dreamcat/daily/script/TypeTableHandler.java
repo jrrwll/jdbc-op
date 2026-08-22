@@ -64,7 +64,7 @@ public class TypeTableHandler extends BaseHandler {
     boolean columnQuota;
     @ArgParserField({"n"})
     int batchSize = 1;
-    @ArgParserField({"tc"})
+    @ArgParserField({"C"})
     int totalCount = randi(1, 76);
     @ArgParserField(firstChar = true)
     boolean yes;
@@ -75,6 +75,7 @@ public class TypeTableHandler extends BaseHandler {
     @Override
     public void init() throws Exception {
         dataSourceAbility.init();
+        ddlSqlAbility.init(dataSourceAbility);
 
         String[] dbTable = tableName.split(",", 2);
         if (dbTable.length == 2) {
@@ -127,24 +128,22 @@ public class TypeTableHandler extends BaseHandler {
             columnNames = pair.getFirst();
             columnTypes = pair.getSecond();
         }
+        dataSourceAbility.initRandomGen(columnNames.size());
 
         List<String> sqlList = new ArrayList<>();
         // ddl sql
         List<String> createTableSql = ddlSqlAbility.getCreateTableSql(
                 tableName, columnNames, columnTypes, compact, columnQuota);
-        if (!yes) {
-            log.info("{}", createTableSql);
-            return;
-        }
 
         // insert sql
         List<String> insertList = new ArrayList<>();
         int rowNum = totalCount;
-        while (rowNum > batchSize) {
+        while (rowNum > 0) {
+            int rowCount = Math.min(rowNum, batchSize);
             rowNum -= batchSize;
 
             List<List<Object>> rows = dataSourceAbility.generateValues(
-                    columnTypes, batchSize, partitionValueList);
+                    columnTypes, rowCount, partitionValueList);
             String insertIntoSql = dataSourceAbility.getInsertIntoSql(
                     rows, columnNames, columnTypes,
                     database, tableName, columnQuota);
@@ -172,11 +171,13 @@ public class TypeTableHandler extends BaseHandler {
         Map<String, Integer> typeCountMap = MapUtil.toCountMap(types);
         if (typeCountMap.values().stream().allMatch(i -> i == 1)) {
             columnNames = types.stream().map(ColumnTypeUtil::formatType)
+                    .map(c -> "c_" + c)
                     .collect(Collectors.toList());
         } else {
             Map<String, MutableInt> seqMap = new HashMap<>();
             for (String type : types) {
-                columnNames.add(formatDupName(type, typeCountMap, seqMap));
+                String columnName = formatDupName(type, typeCountMap, seqMap);
+                columnNames.add("c_" + columnName);
             }
         }
         if (ObjectUtil.isEmpty(partitionTypes)) {
@@ -186,7 +187,8 @@ public class TypeTableHandler extends BaseHandler {
         Map<String, Integer> partitionTypeCountMap = MapUtil.toCountMap(partitionTypes);
         Map<String, MutableInt> partitionSeqMap = new HashMap<>();
         for (String partitionType : partitionTypes) {
-            columnNames.add(formatDupName(partitionType, partitionTypeCountMap, partitionSeqMap));
+            String columnName = formatDupName(partitionType, partitionTypeCountMap, partitionSeqMap);
+            columnNames.add("p_" + columnName);
         }
 
         return Pair.of(columnNames, columnTypes);

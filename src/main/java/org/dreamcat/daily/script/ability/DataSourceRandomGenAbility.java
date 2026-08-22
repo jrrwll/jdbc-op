@@ -40,6 +40,12 @@ public class DataSourceRandomGenAbility extends DataSourceAbility {
         literalConvertor.setGlobalConvertor(this::convert);
     }
 
+    public void initRandomGen(int columns) {
+        if (rowNullRatioBasedGen != null) {
+            rowNullRatioBasedGen.reset(columns);
+        }
+    }
+
     private String convert(String literal, String typeName) {
         if (nullRatio < 1 && nullRatio > 0) {
             if (Math.random() <= nullRatio) {

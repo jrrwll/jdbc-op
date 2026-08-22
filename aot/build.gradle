@@ -1,0 +1,11 @@
+apply plugin: 'org.graalvm.buildtools.native'
+
+dependencies {
+    implementation project(":")
+}
+
+apply from: new File(rootDir, 'gradle/native-image.gradle')
+
+tasks.named('nativeCompile') {
+    classpath.from(configurations.driverJar)
+}

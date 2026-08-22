@@ -21,7 +21,6 @@ jsqlparser = "5.3"
 [libraries]
 common = { module = "org.dreamcat:common", version.ref = "dreamcat-common" }
 common-excel = { module = "org.dreamcat:common-excel", version.ref = "dreamcat-excel" }
-common-x = { module = "org.dreamcat:common-x", version.ref = "dreamcat-x" }
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }

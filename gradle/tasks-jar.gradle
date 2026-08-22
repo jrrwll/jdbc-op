@@ -1,5 +1,5 @@
 // build jar
-void jarTask(String name, String classifier, boolean withJar, String desc) {
+void createJarTask(String name, String classifier, String desc, boolean withJar = true, FileCollection configuration = configurations.runtimeClasspath) {
     // tasks.create(name: name, type: Jar) {
     tasks.register(name, Jar) {
         group = 'build'
@@ -12,20 +12,21 @@ void jarTask(String name, String classifier, boolean withJar, String desc) {
         manifest.from jar.manifest
         from {
             // findAll { it.name.endsWith('.jar') }: filter something else, such as *.pom
-            configurations.runtimeClasspath.findAll { it.name.endsWith('.jar') }.collect { zipTree(it) }
+            configuration.findAll { it.name.endsWith('.jar') }.collect { zipTree(it) }
+            // (configuration1 + configuratio2).findAll { ... }
         }
         if (withJar) {
-            // from sourceSets.main.output
-            with jar
+            // with jar.rootSpec
+            from sourceSets.main.output
         }
     }
 }
 
 plugins.withType(JavaPlugin).configureEach {
     // zip all classes include deps to a fat jar
-    jarTask('fatJar', 'all', true, 'Build a fat jar with all dependencies')
+    createJarTask('fatJar', 'all', 'Build a fat jar with all dependencies')
     // copy all dep jar to a dir
-    jarTask('depJar', 'dep', false, 'Build a fat jar with all dependencies without classes')
+    createJarTask('depJar', 'dep', 'Build a fat jar with all dependencies without classes', false)
 
     tasks.register("allJar") {
         group = 'build'
@@ -37,14 +38,13 @@ plugins.withType(JavaPlugin).configureEach {
     tasks.register("copyDep", Copy) {
         group = 'build'
         description = 'Copy all dep jars to build/dep'
-        destinationDir = file("${layout.buildDirectory.getAsFile().get()}/dep")
+        // destinationDir = file("${layout.buildDirectory.getAsFile().get()}/dep")
+        into(layout.buildDirectory.dir('dep'))
 
-        doLast {
-            def classpath = findProperty('classpath') == 'compile' ?
-                    configurations.compileClasspath : configurations.runtimeClasspath
-            from {
-                classpath.findAll { it.name.endsWith('.jar') }.collect { file(it) }
-            }
+        def classpathName = findProperty('classpath') ?: 'runtime'
+        def classpath = configurations.named("${classpathName}Classpath").get()
+        from {
+            classpath.findAll { it.name.endsWith('.jar') }
         }
     }
 
@@ -62,3 +62,14 @@ plugins.withType(JavaPlugin).configureEach {
         }
     }
 }
+
+void createConfigurationAndJarTask(String name, String classifier, String desc, Configuration... extraConfigurations) {
+    def configuration = configurations.maybeCreate(name)
+    def classpath = configurations.maybeCreate("${name}Classpath")
+    classpath.extendsFrom(configuration, *extraConfigurations)
+
+    createJarTask(name, classifier, desc, true, classpath)
+}
+
+// noinspection GroovyAssignabilityCheck
+ext.createConfigurationAndJarTask = this.&createConfigurationAndJarTask

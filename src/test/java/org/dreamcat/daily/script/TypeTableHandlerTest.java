@@ -22,14 +22,14 @@ class TypeTableHandlerTest extends BaseTest {
     void testNullNeg() {
         run("type-table", "my_table",
                 "-t", "int", "string", "date",
-                "--enable-neg", "--null-ratio", "0.25", "-b", "10", "-n", "100");
+                "--enable-neg", "--null-ratio", "0.25", "-C", "10", "-n", "1");
     }
 
     @Test
     void testSmartNull() {
         run("type-table", "my_table",
                 "-t", "int", "string", "date",
-                "--enable-neg", "--row-null-ratio", "0.5,2", "-b", "10", "-n", "100");
+                "--enable-neg", "--row-null-ratio", "0.5,2", "-C", "10", "-n", "3");
     }
 
     @Test
@@ -46,8 +46,8 @@ class TypeTableHandlerTest extends BaseTest {
     void testMysql() throws Exception {
         List<String> args = new ArrayList<>();
         args.addAll(Arrays.asList("type-table", "my_table", "--column-quota", "--debug",
-                "--extra-column-sql", "id bigint(20) not null auto_increment primary key",
-                "-c", "Column Type: $type", "-t"));
+                "--pre-column-def-sql", "id bigint(20) not null auto_increment primary key",
+                "--column-comment-template", "Column Type: $type", "-t"));
         args.addAll(Arrays.asList(ClassLoaderUtil.getResourceAsString(
                 "mysql-types.txt").split("\n")));
         run(args);

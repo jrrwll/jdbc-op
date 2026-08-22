@@ -92,7 +92,7 @@ subcommands:
     header: "jdbc-op export 将库表或SQL查询数据导出到指定格式的文件"
     helpDesc:
       format: 导出文件格式，支持：json、csv、excel
-      columnNameMappings: 'excel列名映射，json格式，例如：{"c1": "Col Name1", "c2": "Col Name2"'}'
+      columnNameMappings: 'excel列名映射，json格式，例如：{"c1": "Col Name1", "c2": "Col Name2"}'
 
   export-sql:
     commandDesc: 将库表或SQL查询数据导出到sql格式的文件
