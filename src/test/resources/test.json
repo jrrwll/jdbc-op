@@ -1,0 +1,9 @@
+[
+  {"c_int":1,"c_string1":"ab c","c_date":"2000-01-01","c_bool":false,"c_string2":"a,b,c","c_datetime":"2000-01-01 01:30:59","c_time":"01:30:59","c_float":3.14},
+  {"c_int":2,"c_string1":"a\tb\"c","c_date":null,"c_bool":true,"c_string2":null,"c_datetime":"2000-01-01 01:30:59","c_time":"01:30:59","c_float":3.14},
+  {"c_int":2,"c_string1":"a\tb\"c","c_date":null,"c_bool":true,"c_string2":null,"c_datetime":"2000-01-01 01:30:59","c_time":"01:30:59","c_float":3.14},
+  {"c_int":2,"c_string1":"a\tb\"c","c_date":null,"c_bool":true,"c_string2":null,"c_datetime":"2000-01-01 01:30:59","c_time":"01:30:59","c_float":3.14},
+  {"c_int":2,"c_string1":"a\tb\"c","c_date":null,"c_bool":true,"c_string2":null,"c_datetime":"2000-01-01 01:30:59","c_time":"01:30:59","c_float":3.14},
+  {"c_int":2,"c_string1":"a\tb\"c","c_date":null,"c_bool":true,"c_string2":null,"c_datetime":"2000-01-01 01:30:59","c_time":"01:30:59","c_float":3.14},
+  {"c_int":2,"c_string1":"a\tb\"c","c_date":null,"c_bool":true,"c_string2":null,"c_datetime":"2000-01-01 01:30:59","c_time":"01:30:59","c_float":3.14}
+]
