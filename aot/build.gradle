@@ -6,6 +6,13 @@ dependencies {
 
 apply from: new File(rootDir, 'gradle/native-image.gradle')
 
-tasks.named('nativeCompile') {
-    classpath.from(configurations.driverJar)
+graalvmNative {
+    binaries {
+        main {
+            imageName = 'jdbc-op'
+            mainClass = 'org.dreamcat.daily.script.Main'
+
+            classpath.from(configurations.driverJar)
+        }
+    }
 }

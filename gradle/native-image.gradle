@@ -32,8 +32,6 @@ graalvmNative {
 
     binaries {
         main {
-            imageName = 'jdbc-op'
-            mainClass = 'org.dreamcat.daily.script.Main'
             sharedLibrary = false
 
             if (project.hasProperty('prod')) {
