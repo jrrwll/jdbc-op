@@ -47,8 +47,19 @@ class ImportCsvHandlerTest extends BaseTest {
 
     @Test
     void testJdbc2() throws Exception {
-        Main.main("import-csv", "t_table_test", "-n", "3", "-S", "mysql",
+        List<String> args = new ArrayList<>(Arrays.asList(
+                "import-csv", "t_table_test", "-n", "3", "-S", "mysql",
                 "-f", new File(testResourceDir, "test.csv").getCanonicalPath()
-        );
+        ));
+
+        run(args);
+        System.out.println("---- ---- ----    ---- ---- ----");
+
+        args.addAll(Arrays.asList(
+                "-j", "jdbc:h2:mem:testdb;mode=mysql",
+                "--dc", "org.h2.Driver", "--dp"
+        ));
+        args.addAll(h2DriverPath());
+        run(args);
     }
 }

@@ -1,13 +1,13 @@
 package org.dreamcat.daily.script;
 
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.io.FileUtil;
 import org.dreamcat.common.sql.JdbcColumnDef;
 import org.dreamcat.common.util.ObjectUtil;
-import org.dreamcat.daily.script.ability.DataSourceTextTypeAbility;
+import org.dreamcat.daily.script.ability.DataSourceAbility;
+import org.dreamcat.daily.script.ability.TextTypeAbility;
 import org.dreamcat.daily.script.base.BaseExportHandler;
 
 import java.io.File;
@@ -26,9 +26,10 @@ import java.util.stream.Collectors;
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class ExportSqlHandler extends BaseExportHandler {
 
-    @Getter
     @ArgParserField(nested = true)
-    DataSourceTextTypeAbility dataSourceAbility;
+    DataSourceAbility dataSourceAbility;
+    @ArgParserField(nested = true)
+    TextTypeAbility textTypeAbility;
 
     @ArgParserField
     String outputTable = "table_name";
@@ -38,6 +39,7 @@ public class ExportSqlHandler extends BaseExportHandler {
     @Override
     public void init() throws Exception {
         dataSourceAbility.init();
+        textTypeAbility.init(dataSourceAbility);
 
         if (ObjectUtil.isEmpty(sql)) {
             if (verbose) {
@@ -84,7 +86,7 @@ public class ExportSqlHandler extends BaseExportHandler {
                     .collect(Collectors.toList());
             if (columnNames.isEmpty()) {
                 columnNames.addAll(rows.get(0).keySet());
-                columnTypes.addAll(dataSourceAbility.detectColumnTypes(rowList.get(0)));
+                columnTypes.addAll(textTypeAbility.detectColumnTypes(rowList.get(0)));
             }
 
             String outputSql = dataSourceAbility.getInsertIntoSql(rowList, columnNames,

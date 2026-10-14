@@ -38,8 +38,8 @@ class BaseTest {
     }
 
     List<String> h2DriverPath() {
-        // implementation 'com.h2database:h2:2.2.224'
-        return driverPath("com.h2database", "h2", "2.2.224");
+        // implementation 'com.h2database:h2:2.5.250'
+        return driverPath("com.h2database", "h2", "2.5.250");
     }
 
     List<String> sqliteDriverPath() {

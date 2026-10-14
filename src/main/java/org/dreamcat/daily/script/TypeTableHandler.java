@@ -14,7 +14,8 @@ import org.dreamcat.common.util.ListUtil;
 import org.dreamcat.common.util.MapUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.StringUtil;
-import org.dreamcat.daily.script.ability.DataSourceRandomGenAbility;
+import org.dreamcat.daily.script.ability.DataSourceAbility;
+import org.dreamcat.daily.script.ability.RandomGenAbility;
 import org.dreamcat.daily.script.ability.DdlSqlAbility;
 import org.dreamcat.daily.script.ability.JdbcAbility;
 import org.dreamcat.daily.script.ability.OutputAbility;
@@ -50,7 +51,9 @@ public class TypeTableHandler extends BaseHandler {
     private List<String> columns;
 
     @ArgParserField(nested = true)
-    DataSourceRandomGenAbility dataSourceAbility;
+    DataSourceAbility dataSourceAbility;
+    @ArgParserField(nested = true)
+    RandomGenAbility randomGenAbility;
     @ArgParserField(nested = true)
     JdbcAbility jdbcAbility;
     @ArgParserField(nested = true)
@@ -75,6 +78,7 @@ public class TypeTableHandler extends BaseHandler {
     @Override
     public void init() throws Exception {
         dataSourceAbility.init();
+        randomGenAbility.init(dataSourceAbility);
         ddlSqlAbility.init(dataSourceAbility);
 
         String[] dbTable = tableName.split(",", 2);
@@ -128,7 +132,7 @@ public class TypeTableHandler extends BaseHandler {
             columnNames = pair.getFirst();
             columnTypes = pair.getSecond();
         }
-        dataSourceAbility.initRandomGen(columnNames.size());
+        randomGenAbility.initRandomGen(columnNames.size());
 
         List<String> sqlList = new ArrayList<>();
         // ddl sql

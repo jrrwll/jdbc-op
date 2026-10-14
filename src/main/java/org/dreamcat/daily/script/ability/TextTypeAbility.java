@@ -21,11 +21,12 @@ import java.util.stream.Collectors;
  * @author Jerry Will
  * @version 2026-03-21
  */
-public class DataSourceTextTypeAbility extends DataSourceAbility {
+public class TextTypeAbility {
 
     @ArgParserField("TT")
     private String textTypes; // json, type like: Map<TextValueType, String>
 
+    transient DataSourceAbility dataSource;
     transient EnumMap<TextValueType, String> textValueTypeMapping;
 
     public List<String> detectColumnTypes(List<Object> values) {
@@ -38,9 +39,8 @@ public class DataSourceTextTypeAbility extends DataSourceAbility {
         return textValueTypeMapping.get(textValueType);
     }
 
-    @Override
-    public void init() throws Exception {
-        super.init();
+    public void init(DataSourceAbility dataSource) throws Exception {
+        this.dataSource = dataSource;
 
         // text types
         Map<String, Map<String, String>> textTypeMaps = YamlUtil.fromJson(
@@ -48,7 +48,7 @@ public class DataSourceTextTypeAbility extends DataSourceAbility {
                 new TypeReference<Map<String, Map<String, String>>>() {
                 });
         textValueTypeMapping = new EnumMap<>(TextValueType.class);
-        Map<String, String> textTypeMap = getByDatasourceType(textTypeMaps, Collections.emptyMap());
+        Map<String, String> textTypeMap = this.dataSource.getByDatasourceType(textTypeMaps, Collections.emptyMap());
         if (ObjectUtil.isNotEmpty(textTypes)) {
             Map<String, String> customTextTypeMap = JsonUtil.fromJsonObject(textTypes, String.class);
             textTypeMap = new HashMap<>(textTypeMap);

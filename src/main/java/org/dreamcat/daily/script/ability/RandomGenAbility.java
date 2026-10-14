@@ -11,19 +11,21 @@ import org.dreamcat.common.util.ObjectUtil;
  */
 @Slf4j
 @ArgParserType(allProperties = true)
-public class DataSourceRandomGenAbility extends DataSourceAbility {
+public class RandomGenAbility {
 
     public boolean enableNeg; // generate neg number for number types
     public double nullRatio = 0;
     public String rowNullRatio; // like this 'ratio,rows', example: 0.5,10
 
+    transient DataSourceAbility dataSource;
     transient RowNullRatioBasedGen rowNullRatioBasedGen;
 
     // ---- ---- ---- ----    ---- ---- ---- ----    ---- ---- ---- ----
 
-    public void init() throws Exception {
-        super.init();
-        valueGenerator.setEnableNeg(enableNeg);
+    public void init(DataSourceAbility dataSource) throws Exception {
+        this.dataSource = dataSource;
+        this.dataSource.valueGenerator.setEnableNeg(enableNeg);
+        this.dataSource.literalConvertor.setGlobalConvertor(this::convert);
 
         // row null ratio
         if (ObjectUtil.isNotBlank(rowNullRatio)) {
@@ -36,8 +38,6 @@ public class DataSourceRandomGenAbility extends DataSourceAbility {
             int rows = pair.second();
             this.rowNullRatioBasedGen = new RowNullRatioBasedGen(ratio, rows);
         }
-
-        literalConvertor.setGlobalConvertor(this::convert);
     }
 
     public void initRandomGen(int columns) {
@@ -49,11 +49,11 @@ public class DataSourceRandomGenAbility extends DataSourceAbility {
     private String convert(String literal, String typeName) {
         if (nullRatio < 1 && nullRatio > 0) {
             if (Math.random() <= nullRatio) {
-                return literalConvertor.getNullLiteral();
+                return dataSource.literalConvertor.getNullLiteral();
             }
         }
         if (rowNullRatioBasedGen != null && rowNullRatioBasedGen.generate()) {
-            return literalConvertor.getNullLiteral();
+            return dataSource.literalConvertor.getNullLiteral();
         }
         return null;
     }

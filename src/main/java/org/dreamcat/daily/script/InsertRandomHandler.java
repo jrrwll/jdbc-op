@@ -7,9 +7,10 @@ import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.sql.JdbcColumnDef;
 import org.dreamcat.common.util.ObjectUtil;
-import org.dreamcat.daily.script.ability.DataSourceRandomGenAbility;
+import org.dreamcat.daily.script.ability.DataSourceAbility;
 import org.dreamcat.daily.script.ability.JdbcAbility;
 import org.dreamcat.daily.script.ability.OutputAbility;
+import org.dreamcat.daily.script.ability.RandomGenAbility;
 import org.dreamcat.daily.script.base.BaseHandler;
 import org.dreamcat.daily.script.common.AbortException;
 
@@ -28,7 +29,9 @@ public class InsertRandomHandler extends BaseHandler {
     private String tableName;
 
     @ArgParserField(nested = true)
-    DataSourceRandomGenAbility dataSourceAbility;
+    DataSourceAbility dataSourceAbility;
+    @ArgParserField(nested = true)
+    RandomGenAbility randomGenAbility;
     @ArgParserField(nested = true)
     JdbcAbility jdbcAbility;
     @ArgParserField(nested = true)
@@ -52,6 +55,7 @@ public class InsertRandomHandler extends BaseHandler {
         }
 
         dataSourceAbility.init();
+        randomGenAbility.init(dataSourceAbility);
 
         String[] dbTable = tableName.split(",", 2);
         if (dbTable.length == 2) {

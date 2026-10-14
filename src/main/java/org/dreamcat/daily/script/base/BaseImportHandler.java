@@ -4,7 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.common.Pair;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.util.ListUtil;
-import org.dreamcat.daily.script.ability.DataSourceTextTypeAbility;
+import org.dreamcat.daily.script.ability.DataSourceAbility;
+import org.dreamcat.daily.script.ability.TextTypeAbility;
 import org.dreamcat.daily.script.ability.DdlSqlAbility;
 import org.dreamcat.daily.script.ability.JdbcAbility;
 import org.dreamcat.daily.script.ability.OutputAbility;
@@ -22,7 +23,9 @@ public abstract class BaseImportHandler extends BaseHandler {
     @ArgParserField(nested = true)
     protected JdbcAbility jdbcAbility;
     @ArgParserField(nested = true)
-    protected DataSourceTextTypeAbility dataSourceAbility;
+    protected DataSourceAbility dataSourceAbility;
+    @ArgParserField(nested = true)
+    protected TextTypeAbility textTypeAbility;
     @ArgParserField(nested = true)
     protected OutputAbility outputAbility;
 
@@ -45,13 +48,14 @@ public abstract class BaseImportHandler extends BaseHandler {
 
     public void init() throws Exception {
         dataSourceAbility.init();
+        textTypeAbility.init(dataSourceAbility);
         ddlSqlAbility.init(dataSourceAbility);
     }
 
     protected void importTable(
             String tableName, List<String> columnNames,
             List<List<Object>> rows) throws Exception {
-        List<String> columnTypes = dataSourceAbility.detectColumnTypes(rows.get(0));
+        List<String> columnTypes = textTypeAbility.detectColumnTypes(rows.get(0));
 
         List<String> sqlList = new ArrayList<>();
         if (createTableIfNotExists) {

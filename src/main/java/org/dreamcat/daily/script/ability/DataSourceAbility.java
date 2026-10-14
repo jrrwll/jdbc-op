@@ -61,7 +61,6 @@ public class DataSourceAbility {
 
     private static final String select_without_database_sql = "select * from $table";
     private static final String select_sql = "select * from $database.$table";
-    ;
 
     // ==== ==== ==== ====    ==== ==== ==== ====    ==== ==== ==== ====
 

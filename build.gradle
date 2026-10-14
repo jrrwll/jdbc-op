@@ -38,6 +38,9 @@ allprojects {
 
         implementation libs.common.excel
         implementation libs.jsqlparser
+
+        // https://central.sonatype.com/artifact/com.h2database/h2
+        testImplementation "com.h2database:h2:2.5.250"
     }
 
     jar {
