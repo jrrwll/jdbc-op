@@ -2,7 +2,6 @@ package org.dreamcat.daily.script;
 
 import static org.dreamcat.common.util.ExceptionUtil.getRootCauseMessage;
 
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
@@ -25,7 +24,6 @@ import java.util.Map;
 @ArgParserType(command = "export")
 public class ExportHandler extends BaseExportHandler {
 
-    @Getter
     @ArgParserField(nested = true)
     DataSourceAbility dataSourceAbility;
     @ArgParserField(nested = true)

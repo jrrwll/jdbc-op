@@ -1,5 +1,6 @@
 package org.dreamcat.daily.script;
 
+import org.dreamcat.common.io.ShellUtil;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -43,6 +44,12 @@ class ImportCsvHandlerTest extends BaseTest {
         System.out.println("---- ---- ----    ---- ---- ----");
         args.add("--yes");
         run(args);
+
+        System.out.println("---- ---- ----    ---- ---- ----");
+        System.out.println(ShellUtil.execAndOutput(
+                "sqlite3 build/temp.sqlite '.tables' '.exit'"));
+        System.out.println(ShellUtil.execAndOutput(
+                "sqlite3 build/temp.sqlite 'select count(*) from t_table_test' '.exit'"));
     }
 
     @Test

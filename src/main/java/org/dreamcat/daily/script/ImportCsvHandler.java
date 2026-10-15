@@ -2,6 +2,7 @@ package org.dreamcat.daily.script;
 
 import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.common.Pair;
+import org.dreamcat.common.argparse.ArgParserField;
 import org.dreamcat.common.argparse.ArgParserType;
 import org.dreamcat.common.io.CsvUtil;
 import org.dreamcat.common.text.TextValueType;
@@ -19,7 +20,9 @@ import java.util.stream.Collectors;
 @ArgParserType(command = "import-csv")
 public class ImportCsvHandler extends SingleTable {
 
+    @ArgParserField
     private boolean tsv;
+    @ArgParserField
     private boolean emptyStringAsNull;
 
     @Override

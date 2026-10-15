@@ -59,6 +59,6 @@ class BaseTest {
         if (dir.exists()) {
             return Collections.singletonList(dir.getAbsolutePath());
         }
-        return null;
+        return Collections.emptyList();
     }
 }
